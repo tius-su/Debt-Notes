@@ -33,7 +33,52 @@
       color: var(--text);
       line-height: 1.6;
     }
-    
+
+    /* Styles for login form */
+    #login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: var(--secondary);
+    }
+
+    .login-card {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .login-card h2 {
+        color: var(--primary);
+        margin-bottom: 20px;
+    }
+
+    .login-card .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .login-card input[type="email"],
+    .login-card input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 16px;
+    }
+
+    .login-card button {
+        width: 100%;
+        padding: 12px;
+        font-size: 18px;
+    }
+
+    /* Main app container styles */
     .container {
       max-width: 900px;
       margin: 20px auto;
@@ -41,6 +86,7 @@
       border-radius: 12px;
       box-shadow: var(--shadow);
       overflow: hidden;
+      display: none; /* Hidden by default, shown after login */
     }
     
     .header {
@@ -426,7 +472,24 @@
   </style>
 </head>
 <body>
-<div class="container">
+
+<div id="login-container">
+    <div class="login-card">
+        <h2><i class="fas fa-lock"></i> Login Aplikasi Hutang</h2>
+        <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="Masukkan email Anda" required>
+        </div>
+        <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Masukkan password Anda" required>
+        </div>
+        <button onclick="handleLogin()" class="success"><i class="fas fa-sign-in-alt"></i> Login</button>
+        <p id="login-error" style="color: var(--danger); margin-top: 15px;"></p>
+    </div>
+</div>
+
+<div class="container" id="app-container">
   <div class="header">
     <h2><i class="fas fa-file-invoice-dollar"></i> Pelacak Hutang Multi Kreditur</h2>
     <div id="currentDate"></div>
@@ -439,7 +502,6 @@
     <div class="tab" data-tab="analisis"><i class="fas fa-chart-pie"></i> Analisis</div>
   </div>
   
-  <!-- Tab 1: Tambah Hutang -->
   <div class="tab-content active" id="hutang-tab">
     <div class="form-group">
       <label for="namaKreditur"><i class="fas fa-user-tag"></i> Nama Pemberi Kredit</label>
@@ -477,7 +539,6 @@
     </div>
   </div>
   
-  <!-- Tab 2: Riwayat Pembayaran -->
   <div class="tab-content" id="riwayat-tab">
     <div class="search-filter">
       <select id="pilihKreditur" onchange="loadData()">
@@ -541,7 +602,6 @@
     </div>
   </div>
   
-  <!-- Tab 3: Laporan -->
   <div class="tab-content" id="laporan-tab">
     <div class="stats-grid">
       <div class="stat-card">
@@ -587,13 +647,14 @@
             <th>Terbayar</th>
             <th>Sisa Pokok</th>
             <th>Total Bunga</th>
+            <th>Tanggal Mulai</th>
             <th>Status</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
           <tr class="empty-state-row">
-            <td colspan="7">
+            <td colspan="8">
               <div class="empty-state">
                 <i class="fas fa-file-alt"></i>
                 <p>Belum ada data hutang</p>
@@ -603,9 +664,35 @@
         </tbody>
       </table>
     </div>
+
+    <h3 style="margin-top: 30px;"><i class="fas fa-history"></i> Riwayat Semua Pembayaran</h3>
+    <div id="semuaRiwayatPembayaranContainer">
+      <table id="semuaRiwayatPembayaranTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Tanggal</th>
+            <th>Kreditur</th>
+            <th>Pokok</th>
+            <th>Bunga</th>
+            <th>Sisa Pokok</th>
+            <th>Catatan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="empty-state-row">
+            <td colspan="7">
+              <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <p>Belum ada riwayat pembayaran</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
   
-  <!-- Tab 4: Analisis -->
   <div class="tab-content" id="analisis-tab">
     <div class="summary-card">
       <h3><i class="fas fa-chart-line"></i> Analisis Hutang</h3>
@@ -659,7 +746,6 @@
   </div>
 </div>
 
-<!-- Modal Proyeksi -->
 <div class="modal" id="proyeksiModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -692,7 +778,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
@@ -700,9 +786,9 @@
 <script>
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAn7gIui9U5Yt6dDjJAX-gIUxQCkzkwz-o",
-  authDomain: "hutang-notes.firebaseapp.com",
-  projectId: "hutang-notes",
+  apiKey: "AIzaSyAn7gIui9U5Yt6dDjJAX-gIUxQCkzkwz-o", // Ganti dengan API Key Firebase Anda
+  authDomain: "hutang-notes.firebaseapp.com", // Ganti dengan Auth Domain Firebase Anda
+  projectId: "hutang-notes", // Ganti dengan Project ID Firebase Anda
   storageBucket: "hutang-notes.appspot.com",
   messagingSenderId: "705787619261",
   appId: "1:705787619261:web:44ba4dfad2535d202e94d4"
@@ -711,21 +797,90 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth(); // Initialize Firebase Auth
 
 // Global variables
 let hutangData = {};
 let krediturAktif = "";
 let chartInstance = null;
 
+// --- Authentication Logic ---
+function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const loginError = document.getElementById('login-error');
+
+    loginError.textContent = ''; // Clear previous errors
+
+    if (!email || !password) {
+        loginError.textContent = 'Email dan password harus diisi.';
+        return;
+    }
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // Signed in successfully
+            const user = userCredential.user;
+            console.log("User logged in:", user.uid);
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+            initApp(); // Initialize the main application
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.error("Login Error:", errorCode, errorMessage);
+            if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password') {
+                loginError.textContent = 'Email atau password salah.';
+            } else if (errorCode === 'auth/invalid-email') {
+                loginError.textContent = 'Format email tidak valid.';
+            } else {
+                loginError.textContent = 'Terjadi kesalahan saat login. Coba lagi.';
+            }
+        });
+}
+
+// Check auth state on page load
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // User is signed in
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        initApp();
+    } else {
+        // User is signed out
+        document.getElementById('login-container').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+    }
+});
+
+
+// --- Utility Functions ---
 // Format Rupiah
 function formatRupiah(n) {
   return 'Rp ' + Number(n).toLocaleString('id-ID');
 }
 
 // Format Date
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
+function formatDate(dateInput) {
+  if (!dateInput) return '-';
+  
+  let date;
+  // If it's a Firebase Timestamp object
+  if (dateInput instanceof firebase.firestore.Timestamp) {
+    date = dateInput.toDate();
+  } 
+  // If it's an ISO string or Date object already
+  else if (typeof dateInput === 'string' || dateInput instanceof Date) {
+    date = new Date(dateInput);
+  } else {
+    console.warn("Unexpected date format:", dateInput);
+    return '-'; // Fallback for unexpected types
+  }
+  
+  if (isNaN(date.getTime())) { // Check for invalid date
+      return '-';
+  }
   return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
@@ -784,6 +939,11 @@ function setupTabNavigation() {
       // Refresh data if needed
       if (tabId === 'analisis') {
         refreshAnalisis();
+      } else if (tabId === 'riwayat') {
+        filterRiwayat(); // Reload history when switching to riwayat tab
+      } else if (tabId === 'laporan') {
+        updateLaporanSemua(); // Reload reports when switching to laporan tab
+        updateSemuaRiwayatPembayaranTable(); // Load all payments history
       }
     });
   });
@@ -803,6 +963,7 @@ function resetFormPembayaran() {
   document.getElementById('bayarPokok').value = '0';
   document.getElementById('bayarBunga').value = '0';
   document.getElementById('catatanPembayaran').value = '';
+  setDefaultDates(); // Reset tanggalBayar to today
 }
 
 // Save new debt
@@ -827,8 +988,8 @@ function simpanHutangBaru() {
     catatan: catatan || null,
     totalBunga: 0,
     riwayat: [],
-    createdAt: new Date(),
-    updatedAt: new Date()
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(), // Use server timestamp
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()  // Use server timestamp
   };
   
   db.collection("hutang").doc(nama).set(data)
@@ -881,7 +1042,7 @@ function simpanPembayaran() {
         bayarBunga,
         sisaPokok,
         catatan: catatan || null,
-        timestamp: new Date()
+        timestamp: new Date().toISOString() // Use local ISO string for timestamp in array to avoid FieldValue.serverTimestamp() issue
       };
       
       const updatedRiwayat = [...data.riwayat, pembayaran];
@@ -889,14 +1050,14 @@ function simpanPembayaran() {
       return db.collection("hutang").doc(nama).update({
         totalBunga,
         riwayat: updatedRiwayat,
-        updatedAt: new Date()
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     })
     .then(() => {
       alert("Pembayaran berhasil disimpan!");
       resetFormPembayaran();
-      loadKrediturList();
-      filterRiwayat();
+      loadKrediturList(); // This will trigger reload for all relevant tabs
+      filterRiwayat(); // Re-filter current history view
     })
     .catch(error => {
       console.error("Error saving payment: ", error);
@@ -920,9 +1081,11 @@ function loadKrediturList() {
       // Update creditor dropdowns
       updateKrediturDropdowns(krediturList);
       
-      // Update reports
+      // Update reports and analysis
       updateLaporanSemua();
       updateAnalisis();
+      filterRiwayat(); // Also refresh history when all data is reloaded
+      updateSemuaRiwayatPembayaranTable(); // Refresh the all payments table in Laporan tab
       
       return krediturList;
     })
@@ -959,11 +1122,17 @@ function updateKrediturDropdowns(krediturList) {
 // Load data for selected creditor
 function loadData() {
   const nama = document.getElementById("pilihKreditur").value;
-  if (!nama) return;
+  if (!nama) {
+      updateRingkasan(null); // Clear summary if "Semua Kreditur" is selected
+      filterRiwayat(); // Filter history for all if selected
+      return;
+  }
   
   krediturAktif = nama;
-  document.getElementById("namaKreditur").value = nama;
+  // This input is in 'Tambah Hutang' tab, usually not directly related to 'Riwayat'
+  // document.getElementById("namaKreditur").value = nama; 
   updateRingkasan(nama);
+  filterRiwayat(); // Also filter history when a creditor is selected
 }
 
 // Update summary
@@ -1018,6 +1187,11 @@ function updateRingkasan(nama) {
       <span>Total Bunga:</span> 
       <strong>${formatRupiah(data.totalBunga || 0)}</strong>
     </div>
+    ${data.createdAt ? `
+    <div class="summary-item">
+        <span>Tanggal Mulai:</span> 
+        <strong>${formatDate(data.createdAt)}</strong>
+    </div>` : ''}
     ${jatuhTempoInfo}
     <div class="summary-item">
       <span>Bunga per Bulan:</span> 
@@ -1037,7 +1211,7 @@ function updateRingkasan(nama) {
   `;
 }
 
-// Filter payment history
+// Filter payment history for Riwayat tab
 function filterRiwayat() {
   const nama = document.getElementById("pilihKreditur").value;
   const dari = document.getElementById("filterDari").value;
@@ -1048,13 +1222,24 @@ function filterRiwayat() {
   if (nama) {
     // Filter for specific creditor
     if (hutangData[nama]) {
-      filteredData = hutangData[nama].riwayat.map(item => ({ ...item, kreditur: nama }));
+      // Ensure timestamp is always a Date object before map
+      filteredData = hutangData[nama].riwayat.map(item => ({ 
+          ...item, 
+          kreditur: nama, 
+          // Ensure timestamp is a Date object for consistent comparison
+          timestamp: item.timestamp instanceof firebase.firestore.Timestamp ? item.timestamp.toDate() : new Date(item.timestamp)
+      }));
     }
   } else {
     // Filter all creditors
     Object.keys(hutangData).forEach(kreditur => {
       hutangData[kreditur].riwayat.forEach(item => {
-        filteredData.push({ ...item, kreditur });
+        filteredData.push({ 
+            ...item, 
+            kreditur,
+            // Ensure timestamp is a Date object for consistent comparison
+            timestamp: item.timestamp instanceof firebase.firestore.Timestamp ? item.timestamp.toDate() : new Date(item.timestamp)
+        });
       });
     });
   }
@@ -1062,18 +1247,21 @@ function filterRiwayat() {
   // Filter by date range
   if (dari && sampai) {
     filteredData = filteredData.filter(item => {
-      const itemDate = new Date(item.tanggal).toISOString().split('T')[0];
-      return itemDate >= dari && itemDate <= sampai;
+      const itemDate = new Date(item.tanggal);
+      const startDate = new Date(dari);
+      const endDate = new Date(sampai);
+      // Compare date objects
+      return itemDate >= startDate && itemDate <= endDate;
     });
   }
   
-  // Sort by date (newest first)
-  filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+  // Sort by date (newest first) using the converted Date objects
+  filteredData.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Use getTime() for numeric comparison
   
   updateRiwayatTable(filteredData);
 }
 
-// Update payment history table
+// Update payment history table for Riwayat tab
 function updateRiwayatTable(data) {
   const tbody = document.querySelector("#riwayatTable tbody");
   tbody.innerHTML = '';
@@ -1110,51 +1298,7 @@ function updateRiwayatTable(data) {
   });
 }
 
-// Delete payment
-function hapusPembayaran(kreditur, timestamp) {
-  if (!confirm(`Apakah Anda yakin ingin menghapus pembayaran ini?`)) return;
-  
-  const paymentDate = new Date(timestamp);
-  
-  db.collection("hutang").doc(kreditur).get()
-    .then(doc => {
-      if (!doc.exists) {
-        alert("Kreditur tidak ditemukan!");
-        return;
-      }
-      
-      const data = doc.data();
-      const updatedRiwayat = data.riwayat.filter(item => 
-        item.timestamp.toDate().toISOString() !== paymentDate.toISOString()
-      );
-      
-      // Recalculate total bunga and sisa pokok
-      let totalBunga = 0;
-      let sisaPokok = data.pokokAwal;
-      
-      updatedRiwayat.forEach(item => {
-        totalBunga += item.bayarBunga;
-        sisaPokok -= item.bayarPokok;
-        if (sisaPokok < 0) sisaPokok = 0;
-      });
-      
-      return db.collection("hutang").doc(kreditur).update({
-        totalBunga,
-        riwayat: updatedRiwayat,
-        updatedAt: new Date()
-      });
-    })
-    .then(() => {
-      alert("Pembayaran berhasil dihapus!");
-      loadKrediturList();
-    })
-    .catch(error => {
-      console.error("Error deleting payment: ", error);
-      alert("Gagal menghapus pembayaran: " + error.message);
-    });
-}
-
-// Update all creditors report
+// Update all creditors report (main table in Laporan tab)
 function updateLaporanSemua() {
   const krediturList = Object.keys(hutangData);
   const tbody = document.querySelector("#laporanTable tbody");
@@ -1163,8 +1307,7 @@ function updateLaporanSemua() {
   if (krediturList.length === 0) {
     tbody.innerHTML = `
       <tr class="empty-state-row">
-        <td colspan="7">
-          <div class="empty-state">
+        <td colspan="8"> <div class="empty-state">
             <i class="fas fa-file-alt"></i>
             <p>Belum ada data hutang</p>
           </div>
@@ -1214,7 +1357,7 @@ function updateLaporanSemua() {
       <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
       <td>${formatRupiah(sisaPokok)}</td>
       <td>${formatRupiah(data.totalBunga || 0)}</td>
-      <td>${status}</td>
+      <td>${data.createdAt ? formatDate(data.createdAt) : '-'}</td> <td>${status}</td>
       <td>
         <button onclick="lihatDetail('${kreditur}')" class="secondary small"><i class="fas fa-eye"></i></button>
         <button onclick="hapusHutang('${kreditur}')" class="danger small"><i class="fas fa-trash"></i></button>
@@ -1230,12 +1373,69 @@ function updateLaporanSemua() {
   document.getElementById("sisaHutang").textContent = formatRupiah(totalSisa);
   
   // Update progress bar
-  const persenTerbayar = ((totalPokok - totalSisa) / totalPokok * 100).toFixed(1);
+  const persenTerbayar = totalPokok > 0 ? ((totalPokok - totalSisa) / totalPokok * 100).toFixed(1) : 0;
   document.getElementById("persenHutang").textContent = `${persenTerbayar}% terbayar`;
   document.getElementById("progressHutang").style.width = `${persenTerbayar}%`;
+
+  // Also update the all payments table in this tab
+  updateSemuaRiwayatPembayaranTable();
 }
 
-// Filter creditors
+// Function to update the "Riwayat Semua Pembayaran" table
+function updateSemuaRiwayatPembayaranTable() {
+    const tbody = document.querySelector("#semuaRiwayatPembayaranTable tbody");
+    tbody.innerHTML = '';
+
+    let allPayments = [];
+    Object.keys(hutangData).forEach(kreditur => {
+        const data = hutangData[kreditur];
+        (data.riwayat || []).forEach(item => {
+            allPayments.push({
+                kreditur: kreditur,
+                tanggal: item.tanggal,
+                bayarPokok: item.bayarPokok,
+                bayarBunga: item.bayarBunga,
+                sisaPokok: item.sisaPokok,
+                catatan: item.catatan,
+                timestamp: item.timestamp instanceof firebase.firestore.Timestamp ? item.timestamp.toDate() : new Date(item.timestamp)
+            });
+        });
+    });
+
+    // Sort all payments by timestamp (newest first)
+    allPayments.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    if (allPayments.length === 0) {
+        tbody.innerHTML = `
+            <tr class="empty-state-row">
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>Belum ada riwayat pembayaran</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    allPayments.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${formatDate(item.tanggal)}</td>
+            <td>${item.kreditur}</td>
+            <td>${formatRupiah(item.bayarPokok)}</td>
+            <td>${formatRupiah(item.bayarBunga)}</td>
+            <td>${formatRupiah(item.sisaPokok)}</td>
+            <td>${item.catatan || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+
+// Filter creditors (updated to include Tanggal Mulai)
 function filterKreditur() {
   const searchTerm = document.getElementById("cariKreditur").value.toLowerCase();
   const sortOption = document.getElementById("sortKreditur").value;
@@ -1268,8 +1468,7 @@ function filterKreditur() {
   if (krediturList.length === 0) {
     tbody.innerHTML = `
       <tr class="empty-state-row">
-        <td colspan="7">
-          <div class="empty-state">
+        <td colspan="8"> <div class="empty-state">
             <i class="fas fa-search"></i>
             <p>Tidak ditemukan data hutang</p>
           </div>
@@ -1309,7 +1508,7 @@ function filterKreditur() {
       <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
       <td>${formatRupiah(sisaPokok)}</td>
       <td>${formatRupiah(data.totalBunga || 0)}</td>
-      <td>${status}</td>
+      <td>${data.createdAt ? formatDate(data.createdAt) : '-'}</td> <td>${status}</td>
       <td>
         <button onclick="lihatDetail('${kreditur}')" class="secondary small"><i class="fas fa-eye"></i></button>
         <button onclick="hapusHutang('${kreditur}')" class="danger small"><i class="fas fa-trash"></i></button>
@@ -1334,7 +1533,7 @@ function hapusHutang(kreditur) {
   db.collection("hutang").doc(kreditur).delete()
     .then(() => {
       alert(`Data hutang untuk ${kreditur} berhasil dihapus!`);
-      loadKrediturList();
+      loadKrediturList(); // Reload all data
     })
     .catch(error => {
       console.error("Error deleting debt: ", error);
@@ -1350,7 +1549,7 @@ function updateAnalisis() {
 
 // Refresh analysis
 function refreshAnalisis() {
-  loadKrediturList();
+  loadKrediturList(); // This will trigger updateAnalisis
 }
 
 // Update due date table
@@ -1712,58 +1911,7 @@ function displayProyeksiResults(results, kreditur) {
   }
 }
 
-// Share report via WhatsApp
-function shareWhatsApp() {
-  if (!krediturAktif || !hutangData[krediturAktif]) {
-    alert("Pilih kreditur terlebih dahulu!");
-    return;
-  }
-  
-  const data = hutangData[krediturAktif];
-  const riwayat = data.riwayat || [];
-  const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
-  const terbayar = data.pokokAwal - sisaPokok;
-  const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
-  
-  let msg = `*Hutang ke ${krediturAktif}*\n\n`;
-  msg += `Pokok Awal: ${formatRupiah(data.pokokAwal)}\n`;
-  msg += `Terbayar: ${formatRupiah(terbayar)} (${persenTerbayar}%)\n`;
-  msg += `Sisa Pokok: ${formatRupiah(sisaPokok)}\n`;
-  msg += `Total Bunga: ${formatRupiah(data.totalBunga || 0)}\n`;
-  
-  if (data.bungaPersen) {
-    msg += `Bunga per Bulan: ${data.bungaPersen}%\n`;
-  }
-  
-  if (data.jatuhTempo) {
-    const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
-    msg += `Jatuh Tempo: ${formatDate(data.jatuhTempo)} (${hariJatuhTempo <= 0 ? 'Telah jatuh tempo' : `${hariJatuhTempo} hari lagi`})\n`;
-  }
-  
-  if (data.catatan) {
-    msg += `\nCatatan: ${data.catatan}\n`;
-  }
-  
-  msg += `\n*Riwayat Pembayaran:*\n`;
-  
-  if (riwayat.length > 0) {
-    riwayat.forEach((item, index) => {
-      msg += `\n${index + 1}. ${formatDate(item.tanggal)}\n`;
-      msg += `   Pokok: ${formatRupiah(item.bayarPokok)}\n`;
-      msg += `   Bunga: ${formatRupiah(item.bayarBunga)}\n`;
-      msg += `   Sisa: ${formatRupiah(item.sisaPokok)}\n`;
-      if (item.catatan) {
-        msg += `   Catatan: ${item.catatan}\n`;
-      }
-    });
-  } else {
-    msg += `Belum ada riwayat pembayaran\n`;
-  }
-  
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-}
-
-// Share all report via WhatsApp
+// Share report via WhatsApp (Updated to include all payment history)
 function shareLaporanSemua() {
   const krediturList = Object.keys(hutangData);
   
@@ -1789,8 +1937,8 @@ function shareLaporanSemua() {
     totalBunga += data.totalBunga || 0;
   });
   
-  const totalTerbayar = totalPokok - totalSisa;
-  const persenTerbayar = ((totalTerbayar / totalPokok) * 100).toFixed(1);
+  const totalTerbayar = totalPokok > 0 ? (totalPokok - totalSisa) : 0;
+  const persenTerbayar = totalPokok > 0 ? ((totalTerbayar / totalPokok) * 100).toFixed(1) : 0;
   
   msg += `*Total Hutang:* ${formatRupiah(totalPokok)}\n`;
   msg += `*Total Terbayar:* ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)\n`;
@@ -1804,14 +1952,18 @@ function shareLaporanSemua() {
     const riwayat = data.riwayat || [];
     const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
     const terbayar = data.pokokAwal - sisaPokok;
-    const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+    const persenTerbayarKreditur = data.pokokAwal > 0 ? ((terbayar / data.pokokAwal) * 100).toFixed(1) : 0;
     
     msg += `*${kreditur}*\n`;
     msg += `Pokok: ${formatRupiah(data.pokokAwal)}\n`;
-    msg += `Terbayar: ${formatRupiah(terbayar)} (${persenTerbayar}%)\n`;
+    msg += `Terbayar: ${formatRupiah(terbayar)} (${persenTerbayarKreditur}%)\n`;
     msg += `Sisa: ${formatRupiah(sisaPokok)}\n`;
     msg += `Bunga: ${formatRupiah(data.totalBunga || 0)}\n`;
     
+    if (data.createdAt) {
+      msg += `Tanggal Mulai: ${formatDate(data.createdAt)}\n`;
+    }
+
     if (data.jatuhTempo) {
       const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
       msg += `Jatuh Tempo: ${formatDate(data.jatuhTempo)} (${hariJatuhTempo <= 0 ? 'Telah jatuh tempo' : `${hariJatuhTempo} hari lagi`})\n`;
@@ -1819,117 +1971,45 @@ function shareLaporanSemua() {
     
     msg += `\n`;
   });
+
+  // Add all payments history
+  let allPayments = [];
+  Object.keys(hutangData).forEach(kreditur => {
+      const data = hutangData[kreditur];
+      (data.riwayat || []).forEach(item => {
+          allPayments.push({
+              kreditur: kreditur,
+              tanggal: item.tanggal,
+              bayarPokok: item.bayarPokok,
+              bayarBunga: item.bayarBunga,
+              sisaPokok: item.sisaPokok,
+              catatan: item.catatan,
+              timestamp: item.timestamp instanceof firebase.firestore.Timestamp ? item.timestamp.toDate() : new Date(item.timestamp)
+          });
+      });
+  });
+  // Sort all payments by timestamp (newest first)
+  allPayments.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  msg += `*Riwayat Semua Pembayaran:*\n`;
+  if (allPayments.length > 0) {
+      allPayments.forEach((item, index) => {
+          msg += `\n${index + 1}. Kreditur: ${item.kreditur}, Tanggal: ${formatDate(item.tanggal)}\n`;
+          msg += `   Pokok Dibayar: ${formatRupiah(item.bayarPokok)}\n`;
+          msg += `   Bunga Dibayar: ${formatRupiah(item.bayarBunga)}\n`;
+          msg += `   Sisa Pokok: ${formatRupiah(item.sisaPokok)}\n`;
+          if (item.catatan) {
+              msg += `   Catatan: ${item.catatan}\n`;
+          }
+      });
+  } else {
+      msg += `Belum ada riwayat pembayaran.\n`;
+  }
   
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 }
 
-// Export to PDF
-function exportPDF() {
-  if (!krediturAktif || !hutangData[krediturAktif]) {
-    alert("Pilih kreditur terlebih dahulu!");
-    return;
-  }
-  
-  const data = hutangData[krediturAktif];
-  const riwayat = data.riwayat || [];
-  const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
-  const terbayar = data.pokokAwal - sisaPokok;
-  const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
-  
-  let html = `
-    <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      h1 { color: #4a6bff; text-align: center; }
-      .summary { margin-bottom: 20px; padding: 15px; background: #f5f7fa; border-radius: 8px; }
-      .summary-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-      th { background: #4a6bff; color: white; padding: 8px; text-align: left; }
-      td { padding: 8px; border-bottom: 1px solid #ddd; }
-      .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
-    </style>
-    
-    <h1>Laporan Hutang - ${krediturAktif}</h1>
-    <div class="summary">
-      <div class="summary-item">
-        <strong>Pokok Awal:</strong> ${formatRupiah(data.pokokAwal)}
-      </div>
-      <div class="summary-item">
-        <strong>Terbayar:</strong> ${formatRupiah(terbayar)} (${persenTerbayar}%)
-      </div>
-      <div class="summary-item">
-        <strong>Sisa Pokok:</strong> ${formatRupiah(sisaPokok)}
-      </div>
-      <div class="summary-item">
-        <strong>Total Bunga:</strong> ${formatRupiah(data.totalBunga || 0)}
-      </div>
-      ${data.bungaPersen ? `
-      <div class="summary-item">
-        <strong>Bunga per Bulan:</strong> ${data.bungaPersen}%
-      </div>` : ''}
-      ${data.jatuhTempo ? `
-      <div class="summary-item">
-        <strong>Jatuh Tempo:</strong> ${formatDate(data.jatuhTempo)}
-      </div>` : ''}
-      ${data.catatan ? `
-      <div class="summary-item">
-        <strong>Catatan:</strong> ${data.catatan}
-      </div>` : ''}
-    </div>
-    
-    <h3>Riwayat Pembayaran</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Tanggal</th>
-          <th>Pokok</th>
-          <th>Bunga</th>
-          <th>Sisa</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  
-  if (riwayat.length > 0) {
-    riwayat.forEach((item, index) => {
-      html += `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${formatDate(item.tanggal)}</td>
-          <td>${formatRupiah(item.bayarPokok)}</td>
-          <td>${formatRupiah(item.bayarBunga)}</td>
-          <td>${formatRupiah(item.sisaPokok)}</td>
-        </tr>
-      `;
-    });
-  } else {
-    html += `
-      <tr>
-        <td colspan="5" style="text-align: center;">Belum ada riwayat pembayaran</td>
-      </tr>
-    `;
-  }
-  
-  html += `
-      </tbody>
-    </table>
-    <div class="footer">
-      Dicetak pada ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-    </div>
-  `;
-  
-  const opt = {
-    margin: 10,
-    filename: `hutang_${krediturAktif}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
-  
-  html2pdf().set(opt).from(html).save();
-}
-
-// Export all report to PDF
+// Export all report to PDF (updated to include Tanggal Mulai and All Payments History)
 function exportLaporanPDF() {
   const krediturList = Object.keys(hutangData);
   
@@ -1953,19 +2033,20 @@ function exportLaporanPDF() {
     totalBunga += data.totalBunga || 0;
   });
   
-  const totalTerbayar = totalPokok - totalSisa;
-  const persenTerbayar = ((totalTerbayar / totalPokok) * 100).toFixed(1);
+  const totalTerbayar = totalPokok > 0 ? (totalPokok - totalSisa) : 0;
+  const persenTerbayar = totalPokok > 0 ? ((totalTerbayar / totalPokok) * 100).toFixed(1) : 0;
   
   let html = `
     <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      h1 { color: #4a6bff; text-align: center; }
+      body { font-family: Arial, sans-serif; margin: 20px; font-size: 10pt;}
+      h1, h3 { color: #4a6bff; text-align: center; margin-top: 20px; margin-bottom: 10px; }
+      h3 { font-size: 14pt; text-align: left; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 30px;}
       .summary { margin-bottom: 20px; padding: 15px; background: #f5f7fa; border-radius: 8px; }
       .summary-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
       th { background: #4a6bff; color: white; padding: 8px; text-align: left; }
       td { padding: 8px; border-bottom: 1px solid #ddd; }
-      .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
+      .footer { margin-top: 30px; text-align: right; font-size: 8pt; color: #666; }
       .status-lunas { color: #2ed573; font-weight: bold; }
       .status-jatuh-tempo { color: #ff4757; font-weight: bold; }
       .status-aktif { color: #4a6bff; font-weight: bold; }
@@ -1996,6 +2077,7 @@ function exportLaporanPDF() {
           <th>Terbayar</th>
           <th>Sisa</th>
           <th>Bunga</th>
+          <th>Tgl Mulai</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -2007,7 +2089,7 @@ function exportLaporanPDF() {
     const riwayat = data.riwayat || [];
     const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
     const terbayar = data.pokokAwal - sisaPokok;
-    const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+    const persenTerbayarKreditur = data.pokokAwal > 0 ? ((terbayar / data.pokokAwal) * 100).toFixed(1) : 0;
     
     let status = '';
     let statusClass = '';
@@ -2035,9 +2117,10 @@ function exportLaporanPDF() {
       <tr>
         <td>${kreditur}</td>
         <td>${formatRupiah(data.pokokAwal)}</td>
-        <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
+        <td>${formatRupiah(terbayar)} (${persenTerbayarKreditur}%)</td>
         <td>${formatRupiah(sisaPokok)}</td>
         <td>${formatRupiah(data.totalBunga || 0)}</td>
+        <td>${data.createdAt ? formatDate(data.createdAt) : '-'}</td>
         <td class="${statusClass}">${status}</td>
       </tr>
     `;
@@ -2045,6 +2128,67 @@ function exportLaporanPDF() {
   
   html += `
       </tbody>
+    </table>
+    `;
+
+    // Add all payments history to PDF
+    let allPayments = [];
+    Object.keys(hutangData).forEach(kreditur => {
+        const data = hutangData[kreditur];
+        (data.riwayat || []).forEach(item => {
+            allPayments.push({
+                kreditur: kreditur,
+                tanggal: item.tanggal,
+                bayarPokok: item.bayarPokok,
+                bayarBunga: item.bayarBunga,
+                sisaPokok: item.sisaPokok,
+                catatan: item.catatan,
+                timestamp: item.timestamp instanceof firebase.firestore.Timestamp ? item.timestamp.toDate() : new Date(item.timestamp)
+            });
+        });
+    });
+    // Sort all payments by timestamp (newest first)
+    allPayments.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    html += `
+    <h3 style="page-break-before: always;">Riwayat Semua Pembayaran</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>Kreditur</th>
+                <th>Pokok</th>
+                <th>Bunga</th>
+                <th>Sisa Pokok</th>
+                <th>Catatan</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+    if (allPayments.length > 0) {
+        allPayments.forEach((item, index) => {
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${formatDate(item.tanggal)}</td>
+                    <td>${item.kreditur}</td>
+                    <td>${formatRupiah(item.bayarPokok)}</td>
+                    <td>${formatRupiah(item.bayarBunga)}</td>
+                    <td>${formatRupiah(item.sisaPokok)}</td>
+                    <td>${item.catatan || '-'}</td>
+                </tr>
+            `;
+        });
+    } else {
+        html += `
+            <tr>
+                <td colspan="7" style="text-align: center;">Belum ada riwayat pembayaran.</td>
+            </tr>
+        `;
+    }
+    html += `
+        </tbody>
     </table>
     <div class="footer">
       Dicetak pada ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -2062,7 +2206,7 @@ function exportLaporanPDF() {
   html2pdf().set(opt).from(html).save();
 }
 
-// Export to Excel
+// Export to Excel (Updated to include Tanggal Mulai and All Payments History)
 function exportLaporanExcel() {
   const krediturList = Object.keys(hutangData);
   
@@ -2071,9 +2215,9 @@ function exportLaporanExcel() {
     return;
   }
   
-  // Prepare data
-  const data = [
-    ['Nama Kreditur', 'Pokok Awal', 'Terbayar', 'Sisa Pokok', 'Total Bunga', 'Status', 'Jatuh Tempo', 'Catatan']
+  // Prepare data for "Laporan Hutang" sheet
+  const laporanHutangData = [
+    ['Nama Kreditur', 'Pokok Awal', 'Terbayar', 'Sisa Pokok', 'Total Bunga', 'Tanggal Mulai', 'Status', 'Jatuh Tempo', 'Catatan']
   ];
   
   krediturList.forEach(kreditur => {
@@ -2098,29 +2242,68 @@ function exportLaporanExcel() {
       status = 'Aktif';
     }
     
-    data.push([
+    laporanHutangData.push([
       kreditur,
       item.pokokAwal,
       terbayar,
       sisaPokok,
       item.totalBunga || 0,
+      item.createdAt ? formatDate(item.createdAt) : '-',
       status,
       item.jatuhTempo ? formatDate(item.jatuhTempo) : '-',
       item.catatan || '-'
     ]);
   });
+
+  // Prepare data for "Riwayat Pembayaran" sheet
+  const riwayatPembayaranData = [
+    ['No', 'Tanggal', 'Kreditur', 'Pokok Dibayar', 'Bunga Dibayar', 'Sisa Pokok', 'Catatan']
+  ];
+
+  let allPayments = [];
+  Object.keys(hutangData).forEach(kreditur => {
+      const data = hutangData[kreditur];
+      (data.riwayat || []).forEach(item => {
+          allPayments.push({
+              kreditur: kreditur,
+              tanggal: item.tanggal,
+              bayarPokok: item.bayarPokok,
+              bayarBunga: item.bayarBunga,
+              sisaPokok: item.sisaPokok,
+              catatan: item.catatan,
+              timestamp: item.timestamp instanceof firebase.firestore.Timestamp ? item.timestamp.toDate() : new Date(item.timestamp)
+          });
+      });
+  });
+  allPayments.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()); // Sort oldest first for Excel sequence
+
+  allPayments.forEach((item, index) => {
+      riwayatPembayaranData.push([
+          index + 1,
+          formatDate(item.tanggal),
+          item.kreditur,
+          item.bayarPokok,
+          item.bayarBunga,
+          item.sisaPokok,
+          item.catatan || '-'
+      ]);
+  });
   
   // Create workbook
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, "Laporan Hutang");
+  
+  // Add "Laporan Hutang" sheet
+  const wsLaporan = XLSX.utils.aoa_to_sheet(laporanHutangData);
+  XLSX.utils.book_append_sheet(wb, wsLaporan, "Laporan Hutang");
+
+  // Add "Riwayat Pembayaran" sheet
+  const wsRiwayat = XLSX.utils.aoa_to_sheet(riwayatPembayaranData);
+  XLSX.utils.book_append_sheet(wb, wsRiwayat, "Riwayat Pembayaran");
   
   // Export to file
-  XLSX.writeFile(wb, "laporan_hutang.xlsx");
+  XLSX.writeFile(wb, "laporan_hutang_dan_riwayat.xlsx");
 }
 
-// Initialize the app when loaded
-window.onload = initApp;
 </script>
 </body>
 </html>
