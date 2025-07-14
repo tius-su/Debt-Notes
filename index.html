@@ -1,211 +1,2126 @@
-<!DOCTYPE html><html lang="id">
+<!DOCTYPE html>
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <title>Pelacak Hutang Multi Kreditur</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" />
-  <meta name="theme-color" content="#007bff" />
+  <meta name="theme-color" content="#4a6bff" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f8f8f8; }
-    .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 8px #ccc; }
-    input, select, button { padding: 8px; width: 100%; margin: 5px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 6px; }
-    th { background: #007bff; color: #fff; }
-    .summary { background: #eaf4ff; padding: 10px; margin-top: 15px; border-left: 4px solid #007bff; }
-    .actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-    #laporanSemua { margin-top: 30px; background: #fff; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    :root {
+      --primary: #4a6bff;
+      --secondary: #f0f4ff;
+      --danger: #ff4757;
+      --success: #2ed573;
+      --warning: #ffa502;
+      --text: #333;
+      --light-text: #666;
+      --border: #ddd;
+      --shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f7fa;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    
+    .tabs {
+      display: flex;
+      background: #f0f0f0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .tab {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab.active {
+      background: white;
+      border-bottom: 3px solid var(--primary);
+      color: var(--primary);
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 20px;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--light-text);
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border 0.3s;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.2);
+    }
+    
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 16px;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      background: #3a5bef;
+      transform: translateY(-1px);
+    }
+    
+    button.secondary {
+      background: var(--secondary);
+      color: var(--primary);
+    }
+    
+    button.danger {
+      background: var(--danger);
+    }
+    
+    button.success {
+      background: var(--success);
+    }
+    
+    button.warning {
+      background: var(--warning);
+    }
+    
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+    }
+    
+    .summary-card {
+      background: var(--secondary);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--primary);
+    }
+    
+    .summary-card h3 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+    
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .summary-item strong {
+      color: var(--text);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 15px;
+    }
+    
+    th {
+      background: var(--primary);
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+    
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    tr:hover {
+      background: rgba(74, 107, 255, 0.05);
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .badge.primary {
+      background: rgba(74, 107, 255, 0.1);
+      color: var(--primary);
+    }
+    
+    .badge.success {
+      background: rgba(46, 213, 115, 0.1);
+      color: var(--success);
+    }
+    
+    .badge.warning {
+      background: rgba(255, 165, 2, 0.1);
+      color: var(--warning);
+    }
+    
+    .badge.danger {
+      background: rgba(255, 71, 87, 0.1);
+      color: var(--danger);
+    }
+    
+    .progress-container {
+      margin: 15px 0;
+    }
+    
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--light-text);
+    }
+    
+    .empty-state i {
+      font-size: 48px;
+      color: #ccc;
+      margin-bottom: 15px;
+    }
+    
+    .search-filter {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .search-filter input, .search-filter select {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      animation: modalFadeIn 0.3s;
+    }
+    
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: var(--primary);
+    }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--light-text);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    
+    .stat-card h3 {
+      margin: 0 0 5px;
+      font-size: 14px;
+      color: var(--light-text);
+    }
+    
+    .stat-card p {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        border-radius: 8px;
+      }
+      
+      .header {
+        padding: 12px 15px;
+      }
+      
+      .header h2 {
+        font-size: 1.3rem;
+      }
+      
+      .tab {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      
+      .tab-content {
+        padding: 15px;
+      }
+      
+      .actions {
+        gap: 8px;
+      }
+      
+      button {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      table {
+        font-size: 14px;
+      }
+      
+      th, td {
+        padding: 8px 10px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px;
+      }
+      
+      .tab {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .search-filter input, .search-filter select {
+        min-width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
-<div class="container" id="content">
-  <h2>Pelacak Hutang Multi Kreditur</h2><label>Nama Pemberi Kredit:</label> <input type="text" id="namaKreditur" placeholder="Contoh: A, B, C" />
-
-<label>Pokok Awal (Rp):</label> <input type="number" id="pokokAwal" /> <button onclick="simpanHutangBaru()">Simpan Hutang Baru</button>
-
-<label>Tanggal Pembayaran:</label> <input type="date" id="tanggal" />
-
-<label>Bayar Pokok (Rp):</label> <input type="number" id="bayarPokok" value="0" />
-
-<label>Bayar Bunga (Rp):</label> <input type="number" id="bayarBunga" value="0" />
-
-<button onclick="simpanPembayaran()">Simpan Pembayaran</button>
-
-  <div class="actions">
-    <button onclick="shareWhatsApp()">Share WhatsApp</button>
-    <button onclick="exportPDF()">Unduh PDF</button>
-    <select id="pilihKreditur" onchange="loadData()"></select>
-  </div>  <div class="summary" id="ringkasan"></div>  <table>
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Tanggal</th>
-        <th>Bayar Pokok</th>
-        <th>Bayar Bunga</th>
-        <th>Sisa Pokok</th>
-      </tr>
-    </thead>
-    <tbody id="riwayatTable"></tbody>
-  </table>  <div id="laporanSemua">
-    <h3>Laporan Semua Kreditur</h3>
-    <button onclick="shareLaporanSemua()">Share WhatsApp</button>
-    <button onclick="exportLaporanPDF()">Unduh PDF</button>
-    <table>
-      <thead>
-        <tr><th>Nama</th><th>Pokok Awal</th><th>Sisa Pokok</th><th>Total Bunga</th></tr>
-      </thead>
-      <tbody id="laporanTable"></tbody>
-    </table>
+<div class="container">
+  <div class="header">
+    <h2><i class="fas fa-file-invoice-dollar"></i> Pelacak Hutang Multi Kreditur</h2>
+    <div id="currentDate"></div>
   </div>
-</div><script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script><script>
+  
+  <div class="tabs">
+    <div class="tab active" data-tab="hutang"><i class="fas fa-plus-circle"></i> Tambah Hutang</div>
+    <div class="tab" data-tab="riwayat"><i class="fas fa-history"></i> Riwayat Pembayaran</div>
+    <div class="tab" data-tab="laporan"><i class="fas fa-chart-bar"></i> Laporan</div>
+    <div class="tab" data-tab="analisis"><i class="fas fa-chart-pie"></i> Analisis</div>
+  </div>
+  
+  <!-- Tab 1: Tambah Hutang -->
+  <div class="tab-content active" id="hutang-tab">
+    <div class="form-group">
+      <label for="namaKreditur"><i class="fas fa-user-tag"></i> Nama Pemberi Kredit</label>
+      <input type="text" id="namaKreditur" placeholder="Contoh: Bank ABC, Toko XYZ, Teman A" />
+    </div>
+    
+    <div class="form-group">
+      <label for="pokokAwal"><i class="fas fa-coins"></i> Pokok Awal (Rp)</label>
+      <input type="number" id="pokokAwal" placeholder="Jumlah hutang awal" />
+    </div>
+    
+    <div class="form-group">
+      <label for="bungaPersen"><i class="fas fa-percentage"></i> Bunga (%) per Bulan (Opsional)</label>
+      <input type="number" id="bungaPersen" placeholder="Persentase bunga bulanan" />
+    </div>
+    
+    <div class="form-group">
+      <label for="jatuhTempo"><i class="fas fa-calendar-day"></i> Tanggal Jatuh Tempo (Opsional)</label>
+      <input type="date" id="jatuhTempo" />
+    </div>
+    
+    <div class="form-group">
+      <label for="catatan"><i class="fas fa-sticky-note"></i> Catatan Tambahan (Opsional)</label>
+      <textarea id="catatan" rows="2" placeholder="Detail tambahan tentang hutang ini"></textarea>
+    </div>
+    
+    <div class="actions">
+      <button onclick="simpanHutangBaru()" class="success"><i class="fas fa-save"></i> Simpan Hutang Baru</button>
+      <button onclick="resetForm()" class="secondary"><i class="fas fa-redo"></i> Reset Form</button>
+    </div>
+    
+    <div class="summary-card" id="ringkasan">
+      <h3><i class="fas fa-info-circle"></i> Ringkasan Hutang</h3>
+      <div class="empty-state">Pilih atau tambahkan hutang untuk melihat ringkasan</div>
+    </div>
+  </div>
+  
+  <!-- Tab 2: Riwayat Pembayaran -->
+  <div class="tab-content" id="riwayat-tab">
+    <div class="search-filter">
+      <select id="pilihKreditur" onchange="loadData()">
+        <option value="">Semua Kreditur</option>
+      </select>
+      <input type="date" id="filterDari" placeholder="Dari tanggal" />
+      <input type="date" id="filterSampai" placeholder="Sampai tanggal" />
+      <button onclick="filterRiwayat()" class="secondary"><i class="fas fa-filter"></i> Filter</button>
+    </div>
+    
+    <div class="form-group">
+      <label for="tanggalBayar"><i class="fas fa-calendar-alt"></i> Tanggal Pembayaran</label>
+      <input type="date" id="tanggalBayar" />
+    </div>
+    
+    <div class="form-group">
+      <label for="bayarPokok"><i class="fas fa-wallet"></i> Bayar Pokok (Rp)</label>
+      <input type="number" id="bayarPokok" value="0" />
+    </div>
+    
+    <div class="form-group">
+      <label for="bayarBunga"><i class="fas fa-percentage"></i> Bayar Bunga (Rp)</label>
+      <input type="number" id="bayarBunga" value="0" />
+    </div>
+    
+    <div class="form-group">
+      <label for="catatanPembayaran"><i class="fas fa-sticky-note"></i> Catatan Pembayaran (Opsional)</label>
+      <textarea id="catatanPembayaran" rows="2" placeholder="Catatan tentang pembayaran ini"></textarea>
+    </div>
+    
+    <div class="actions">
+      <button onclick="simpanPembayaran()" class="success"><i class="fas fa-money-bill-wave"></i> Simpan Pembayaran</button>
+      <button onclick="resetFormPembayaran()" class="secondary"><i class="fas fa-redo"></i> Reset Form</button>
+    </div>
+    
+    <div id="riwayatContainer">
+      <table id="riwayatTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Tanggal</th>
+            <th>Kreditur</th>
+            <th>Pokok</th>
+            <th>Bunga</th>
+            <th>Sisa</th>
+            <th>Catatan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="empty-state-row">
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <p>Belum ada riwayat pembayaran</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Tab 3: Laporan -->
+  <div class="tab-content" id="laporan-tab">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>Total Kreditur</h3>
+        <p id="totalKreditur">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Total Hutang</h3>
+        <p id="totalHutang">Rp 0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Total Terbayar</h3>
+        <p id="totalTerbayar">Rp 0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Sisa Hutang</h3>
+        <p id="sisaHutang">Rp 0</p>
+      </div>
+    </div>
+    
+    <div class="search-filter">
+      <input type="text" id="cariKreditur" placeholder="Cari kreditur..." oninput="filterKreditur()" />
+      <select id="sortKreditur" onchange="filterKreditur()">
+        <option value="nama-asc">Sortir: Nama A-Z</option>
+        <option value="nama-desc">Sortir: Nama Z-A</option>
+        <option value="hutang-asc">Sortir: Hutang Terkecil</option>
+        <option value="hutang-desc">Sortir: Hutang Terbesar</option>
+      </select>
+    </div>
+    
+    <div class="actions">
+      <button onclick="shareLaporanSemua()" class="secondary"><i class="fab fa-whatsapp"></i> Share WhatsApp</button>
+      <button onclick="exportLaporanPDF()" class="secondary"><i class="fas fa-file-pdf"></i> Unduh PDF</button>
+      <button onclick="exportLaporanExcel()" class="success"><i class="fas fa-file-excel"></i> Unduh Excel</button>
+    </div>
+    
+    <div id="laporanContainer">
+      <table id="laporanTable">
+        <thead>
+          <tr>
+            <th>Nama Kreditur</th>
+            <th>Pokok Awal</th>
+            <th>Terbayar</th>
+            <th>Sisa Pokok</th>
+            <th>Total Bunga</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="empty-state-row">
+            <td colspan="7">
+              <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <p>Belum ada data hutang</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Tab 4: Analisis -->
+  <div class="tab-content" id="analisis-tab">
+    <div class="summary-card">
+      <h3><i class="fas fa-chart-line"></i> Analisis Hutang</h3>
+      <div class="progress-container">
+        <div class="progress-label">
+          <span>Total Hutang</span>
+          <span id="persenHutang">0% terbayar</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressHutang" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div id="chartContainer" style="height: 300px; margin: 20px 0;">
+        <div class="empty-state">
+          <i class="fas fa-chart-pie"></i>
+          <p>Grafik akan muncul di sini</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="actions">
+      <button onclick="refreshAnalisis()" class="secondary"><i class="fas fa-sync-alt"></i> Refresh Data</button>
+      <button onclick="lihatProyeksi()" class="success"><i class="fas fa-calculator"></i> Lihat Proyeksi</button>
+    </div>
+    
+    <h3><i class="fas fa-bell"></i> Hutang Jatuh Tempo</h3>
+    <div id="jatuhTempoContainer">
+      <table>
+        <thead>
+          <tr>
+            <th>Kreditur</th>
+            <th>Jatuh Tempo</th>
+            <th>Sisa Hutang</th>
+            <th>Sisa Hari</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="jatuhTempoTable">
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <p>Tidak ada hutang yang jatuh tempo</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Proyeksi -->
+<div class="modal" id="proyeksiModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-calculator"></i> Proyeksi Pembayaran</h3>
+      <button class="close-modal" onclick="closeModal('proyeksiModal')">&times;</button>
+    </div>
+    
+    <div class="form-group">
+      <label for="proyeksiKreditur">Pilih Kreditur</label>
+      <select id="proyeksiKreditur">
+        <option value="">Semua Kreditur</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="proyeksiBulan">Jangka Waktu (bulan)</label>
+      <input type="number" id="proyeksiBulan" min="1" max="36" value="12" />
+    </div>
+    
+    <div class="form-group">
+      <label for="proyeksiAngsuran">Estimasi Angsuran per Bulan (Rp)</label>
+      <input type="number" id="proyeksiAngsuran" placeholder="Jumlah yang bisa dibayar per bulan" />
+    </div>
+    
+    <button onclick="hitungProyeksi()" class="success"><i class="fas fa-calculator"></i> Hitung Proyeksi</button>
+    
+    <div id="hasilProyeksi" style="margin-top: 20px;"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+
+<script>
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAn7gIui9U5Yt6dDjJAX-gIUxQCkzkwz-o",
+  authDomain: "hutang-notes.firebaseapp.com",
+  projectId: "hutang-notes",
+  storageBucket: "hutang-notes.appspot.com",
+  messagingSenderId: "705787619261",
+  appId: "1:705787619261:web:44ba4dfad2535d202e94d4"
 };
 
+// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let pokokAwal = 0, sisaPokok = 0, totalBunga = 0, riwayat = [], krediturAktif = "";
+// Global variables
+let hutangData = {};
+let krediturAktif = "";
+let chartInstance = null;
 
+// Format Rupiah
 function formatRupiah(n) {
   return 'Rp ' + Number(n).toLocaleString('id-ID');
 }
 
-function simpanHutangBaru() {
-  const nama = document.getElementById("namaKreditur").value.trim();
-  const pokok = parseInt(document.getElementById("pokokAwal").value) || 0;
-  if (!nama || !pokok) return alert("Isi nama kreditur dan pokok awal.");
-  krediturAktif = nama;
-  pokokAwal = pokok;
-  sisaPokok = pokok;
-  totalBunga = 0;
-  riwayat = [];
-  db.collection("hutang").doc(nama).set({ pokokAwal, totalBunga, riwayat })
-    .then(() => { loadKrediturList(); updateRingkasan(); updateTabel(); updateLaporanSemua(); alert("Hutang baru disimpan untuk kreditur: " + nama); })
-    .catch((error) => alert("Gagal menyimpan hutang baru: " + error.message));
+// Format Date
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function simpanPembayaran() {
-  const nama = document.getElementById("namaKreditur").value.trim();
-  const tanggal = document.getElementById("tanggal").value;
-  const bayarPokok = parseInt(document.getElementById("bayarPokok").value) || 0;
-  const bayarBunga = parseInt(document.getElementById("bayarBunga").value) || 0;
-  if (!nama || !tanggal) return alert("Isi nama kreditur dan tanggal.");
-  krediturAktif = nama;
-  if (riwayat.length === 0 && sisaPokok === 0) {
-    pokokAwal = parseInt(document.getElementById("pokokAwal").value) || 0;
-    if (!pokokAwal) return alert("Pokok awal wajib diisi.");
-    sisaPokok = pokokAwal;
-  }
-  sisaPokok -= bayarPokok;
-  if (sisaPokok < 0) sisaPokok = 0;
-  totalBunga += bayarBunga;
-  const data = { tanggal, bayarPokok, bayarBunga, sisaPokok, timestamp: new Date() };
-  riwayat.push(data);
-  db.collection("hutang").doc(nama).set({ pokokAwal, totalBunga, riwayat })
-    .then(() => { loadKrediturList(); updateRingkasan(); updateTabel(); updateLaporanSemua(); alert("Tersimpan untuk kreditur: " + nama); })
-    .catch(err => alert("Gagal menyimpan: " + err.message));
+// Calculate days between dates
+function daysBetween(date1, date2) {
+  const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+  const firstDate = new Date(date1);
+  const secondDate = new Date(date2);
+  return Math.round(Math.abs((firstDate - secondDate) / oneDay));
 }
 
-function updateRingkasan() {
-  const persen = sisaPokok > 0 ? ((500000 / sisaPokok) * 100).toFixed(2) : 0;
-  document.getElementById("ringkasan").innerHTML = `
-    Kreditur: <strong>${krediturAktif}</strong><br>
-    Pokok Awal: ${formatRupiah(pokokAwal)}<br>
-    Sisa Pokok: ${formatRupiah(sisaPokok)}<br>
-    Total Bunga Terbayar: ${formatRupiah(totalBunga)}<br>
-    Estimasi Bunga Bulanan: ${persen}%`;
+// Initialize the app
+function initApp() {
+  updateCurrentDate();
+  loadKrediturList();
+  setupTabNavigation();
+  setDefaultDates();
+  
+  // Load data every 30 seconds to keep it fresh
+  setInterval(loadKrediturList, 30000);
 }
 
-function updateTabel() {
-  const tbody = document.getElementById("riwayatTable");
-  tbody.innerHTML = "";
-  riwayat.forEach((p, i) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${i+1}</td><td>${p.tanggal}</td><td>${formatRupiah(p.bayarPokok)}</td><td>${formatRupiah(p.bayarBunga)}</td><td>${formatRupiah(p.sisaPokok)}</td>`;
-    tbody.appendChild(tr);
+// Update current date display
+function updateCurrentDate() {
+  const now = new Date();
+  document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', { 
+    weekday: 'long', 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric' 
   });
 }
 
-function updateLaporanSemua() {
-  const tbody = document.getElementById("laporanTable");
-  tbody.innerHTML = "";
-  db.collection("hutang").get().then(snapshot => {
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const riwayat = data.riwayat || [];
-      const sisa = riwayat.length ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${doc.id}</td><td>${formatRupiah(data.pokokAwal)}</td><td>${formatRupiah(sisa)}</td><td>${formatRupiah(data.totalBunga)}</td>`;
-      tbody.appendChild(tr);
+// Set default dates for inputs
+function setDefaultDates() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('tanggalBayar').value = today;
+  document.getElementById('filterDari').value = today;
+  document.getElementById('filterSampai').value = today;
+}
+
+// Setup tab navigation
+function setupTabNavigation() {
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active class from all tabs and contents
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      // Add active class to clicked tab and corresponding content
+      tab.classList.add('active');
+      const tabId = tab.getAttribute('data-tab');
+      document.getElementById(`${tabId}-tab`).classList.add('active');
+      
+      // Refresh data if needed
+      if (tabId === 'analisis') {
+        refreshAnalisis();
+      }
     });
   });
 }
 
-function loadData() {
-  const nama = document.getElementById("pilihKreditur").value;
-  if (!nama) return;
+// Reset form
+function resetForm() {
+  document.getElementById('namaKreditur').value = '';
+  document.getElementById('pokokAwal').value = '';
+  document.getElementById('bungaPersen').value = '';
+  document.getElementById('jatuhTempo').value = '';
+  document.getElementById('catatan').value = '';
+}
+
+// Reset payment form
+function resetFormPembayaran() {
+  document.getElementById('bayarPokok').value = '0';
+  document.getElementById('bayarBunga').value = '0';
+  document.getElementById('catatanPembayaran').value = '';
+}
+
+// Save new debt
+function simpanHutangBaru() {
+  const nama = document.getElementById("namaKreditur").value.trim();
+  const pokok = parseInt(document.getElementById("pokokAwal").value) || 0;
+  const bungaPersen = parseFloat(document.getElementById("bungaPersen").value) || 0;
+  const jatuhTempo = document.getElementById("jatuhTempo").value;
+  const catatan = document.getElementById("catatan").value.trim();
+  
+  if (!nama || !pokok) {
+    alert("Nama kreditur dan pokok awal harus diisi!");
+    return;
+  }
+  
   krediturAktif = nama;
-  db.collection("hutang").doc(nama).get().then(doc => {
-    if (doc.exists) {
+  
+  const data = {
+    pokokAwal: pokok,
+    bungaPersen: bungaPersen,
+    jatuhTempo: jatuhTempo || null,
+    catatan: catatan || null,
+    totalBunga: 0,
+    riwayat: [],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  
+  db.collection("hutang").doc(nama).set(data)
+    .then(() => {
+      alert(`Hutang baru untuk ${nama} berhasil disimpan!`);
+      resetForm();
+      loadKrediturList();
+      updateRingkasan(nama);
+    })
+    .catch(error => {
+      console.error("Error saving debt: ", error);
+      alert("Gagal menyimpan hutang baru: " + error.message);
+    });
+}
+
+// Save payment
+function simpanPembayaran() {
+  const nama = document.getElementById("pilihKreditur").value;
+  const tanggal = document.getElementById("tanggalBayar").value;
+  const bayarPokok = parseInt(document.getElementById("bayarPokok").value) || 0;
+  const bayarBunga = parseInt(document.getElementById("bayarBunga").value) || 0;
+  const catatan = document.getElementById("catatanPembayaran").value.trim();
+  
+  if (!nama || !tanggal) {
+    alert("Pilih kreditur dan isi tanggal pembayaran!");
+    return;
+  }
+  
+  if (bayarPokok === 0 && bayarBunga === 0) {
+    alert("Isi jumlah pembayaran pokok atau bunga!");
+    return;
+  }
+  
+  db.collection("hutang").doc(nama).get()
+    .then(doc => {
+      if (!doc.exists) {
+        alert("Kreditur tidak ditemukan!");
+        return;
+      }
+      
       const data = doc.data();
-      pokokAwal = data.pokokAwal || 0;
-      sisaPokok = data.riwayat?.slice(-1)[0]?.sisaPokok || pokokAwal;
-      totalBunga = data.totalBunga || 0;
-      riwayat = data.riwayat || [];
-      document.getElementById("namaKreditur").value = nama;
-      updateRingkasan();
-      updateTabel();
+      let sisaPokok = data.riwayat.length > 0 ? data.riwayat[data.riwayat.length - 1].sisaPokok : data.pokokAwal;
+      sisaPokok -= bayarPokok;
+      if (sisaPokok < 0) sisaPokok = 0;
+      
+      const totalBunga = (data.totalBunga || 0) + bayarBunga;
+      const pembayaran = {
+        tanggal,
+        bayarPokok,
+        bayarBunga,
+        sisaPokok,
+        catatan: catatan || null,
+        timestamp: new Date()
+      };
+      
+      const updatedRiwayat = [...data.riwayat, pembayaran];
+      
+      return db.collection("hutang").doc(nama).update({
+        totalBunga,
+        riwayat: updatedRiwayat,
+        updatedAt: new Date()
+      });
+    })
+    .then(() => {
+      alert("Pembayaran berhasil disimpan!");
+      resetFormPembayaran();
+      loadKrediturList();
+      filterRiwayat();
+    })
+    .catch(error => {
+      console.error("Error saving payment: ", error);
+      alert("Gagal menyimpan pembayaran: " + error.message);
+    });
+}
+
+// Load creditor list
+function loadKrediturList() {
+  db.collection("hutang").get()
+    .then(snapshot => {
+      hutangData = {};
+      const krediturList = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        hutangData[doc.id] = data;
+        krediturList.push(doc.id);
+      });
+      
+      // Update creditor dropdowns
+      updateKrediturDropdowns(krediturList);
+      
+      // Update reports
+      updateLaporanSemua();
+      updateAnalisis();
+      
+      return krediturList;
+    })
+    .catch(error => {
+      console.error("Error loading creditors: ", error);
+    });
+}
+
+// Update creditor dropdowns
+function updateKrediturDropdowns(krediturList) {
+  const dropdowns = [
+    document.getElementById("pilihKreditur"),
+    document.getElementById("proyeksiKreditur")
+  ];
+  
+  dropdowns.forEach(dropdown => {
+    const currentValue = dropdown.value;
+    dropdown.innerHTML = '<option value="">Semua Kreditur</option>';
+    
+    krediturList.sort().forEach(kreditur => {
+      const option = document.createElement("option");
+      option.value = kreditur;
+      option.textContent = kreditur;
+      dropdown.appendChild(option);
+    });
+    
+    // Restore selected value if still exists
+    if (krediturList.includes(currentValue)) {
+      dropdown.value = currentValue;
     }
   });
 }
 
-function loadKrediturList() {
-  const select = document.getElementById("pilihKreditur");
-  select.innerHTML = `<option value="">Pilih Kreditur</option>`;
-  db.collection("hutang").get().then(snapshot => {
-    snapshot.forEach(doc => {
-      const opt = document.createElement("option");
-      opt.value = doc.id;
-      opt.textContent = doc.id;
-      select.appendChild(opt);
-    });
-  });
-  updateLaporanSemua();
+// Load data for selected creditor
+function loadData() {
+  const nama = document.getElementById("pilihKreditur").value;
+  if (!nama) return;
+  
+  krediturAktif = nama;
+  document.getElementById("namaKreditur").value = nama;
+  updateRingkasan(nama);
 }
 
+// Update summary
+function updateRingkasan(nama) {
+  if (!nama || !hutangData[nama]) {
+    document.getElementById("ringkasan").innerHTML = `
+      <h3><i class="fas fa-info-circle"></i> Ringkasan Hutang</h3>
+      <div class="empty-state">Pilih atau tambahkan hutang untuk melihat ringkasan</div>
+    `;
+    return;
+  }
+  
+  const data = hutangData[nama];
+  const riwayat = data.riwayat || [];
+  const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+  const terbayar = data.pokokAwal - sisaPokok;
+  const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+  
+  let jatuhTempoInfo = '<div class="summary-item"><span>Jatuh Tempo:</span> <strong>-</strong></div>';
+  if (data.jatuhTempo) {
+    const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
+    const status = hariJatuhTempo <= 0 ? 'Telah jatuh tempo' : `${hariJatuhTempo} hari lagi`;
+    const statusClass = hariJatuhTempo <= 7 ? 'danger' : (hariJatuhTempo <= 30 ? 'warning' : 'success');
+    
+    jatuhTempoInfo = `
+      <div class="summary-item">
+        <span>Jatuh Tempo:</span> 
+        <strong>${formatDate(data.jatuhTempo)}</strong>
+      </div>
+      <div class="summary-item">
+        <span>Status:</span> 
+        <span class="badge ${statusClass}">${status}</span>
+      </div>
+    `;
+  }
+  
+  document.getElementById("ringkasan").innerHTML = `
+    <h3><i class="fas fa-info-circle"></i> Ringkasan Hutang - ${nama}</h3>
+    <div class="summary-item">
+      <span>Pokok Awal:</span> 
+      <strong>${formatRupiah(data.pokokAwal)}</strong>
+    </div>
+    <div class="summary-item">
+      <span>Terbayar:</span> 
+      <strong>${formatRupiah(terbayar)} (${persenTerbayar}%)</strong>
+    </div>
+    <div class="summary-item">
+      <span>Sisa Pokok:</span> 
+      <strong>${formatRupiah(sisaPokok)}</strong>
+    </div>
+    <div class="summary-item">
+      <span>Total Bunga:</span> 
+      <strong>${formatRupiah(data.totalBunga || 0)}</strong>
+    </div>
+    ${jatuhTempoInfo}
+    <div class="summary-item">
+      <span>Bunga per Bulan:</span> 
+      <strong>${data.bungaPersen || 0}%</strong>
+    </div>
+    ${data.catatan ? `<div class="summary-item"><span>Catatan:</span> <em>${data.catatan}</em></div>` : ''}
+    
+    <div class="progress-container" style="margin-top: 15px;">
+      <div class="progress-label">
+        <span>Progres Pembayaran</span>
+        <span>${persenTerbayar}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${persenTerbayar}%"></div>
+      </div>
+    </div>
+  `;
+}
+
+// Filter payment history
+function filterRiwayat() {
+  const nama = document.getElementById("pilihKreditur").value;
+  const dari = document.getElementById("filterDari").value;
+  const sampai = document.getElementById("filterSampai").value;
+  
+  let filteredData = [];
+  
+  if (nama) {
+    // Filter for specific creditor
+    if (hutangData[nama]) {
+      filteredData = hutangData[nama].riwayat.map(item => ({ ...item, kreditur: nama }));
+    }
+  } else {
+    // Filter all creditors
+    Object.keys(hutangData).forEach(kreditur => {
+      hutangData[kreditur].riwayat.forEach(item => {
+        filteredData.push({ ...item, kreditur });
+      });
+    });
+  }
+  
+  // Filter by date range
+  if (dari && sampai) {
+    filteredData = filteredData.filter(item => {
+      const itemDate = new Date(item.tanggal).toISOString().split('T')[0];
+      return itemDate >= dari && itemDate <= sampai;
+    });
+  }
+  
+  // Sort by date (newest first)
+  filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+  
+  updateRiwayatTable(filteredData);
+}
+
+// Update payment history table
+function updateRiwayatTable(data) {
+  const tbody = document.querySelector("#riwayatTable tbody");
+  tbody.innerHTML = '';
+  
+  if (data.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-state-row">
+        <td colspan="8">
+          <div class="empty-state">
+            <i class="fas fa-history"></i>
+            <p>Tidak ada riwayat pembayaran</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  data.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${formatDate(item.tanggal)}</td>
+      <td>${item.kreditur}</td>
+      <td>${formatRupiah(item.bayarPokok)}</td>
+      <td>${formatRupiah(item.bayarBunga)}</td>
+      <td>${formatRupiah(item.sisaPokok)}</td>
+      <td>${item.catatan || '-'}</td>
+      <td>
+        <button onclick="hapusPembayaran('${item.kreditur}', '${item.timestamp.toISOString()}')" class="danger small"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Delete payment
+function hapusPembayaran(kreditur, timestamp) {
+  if (!confirm(`Apakah Anda yakin ingin menghapus pembayaran ini?`)) return;
+  
+  const paymentDate = new Date(timestamp);
+  
+  db.collection("hutang").doc(kreditur).get()
+    .then(doc => {
+      if (!doc.exists) {
+        alert("Kreditur tidak ditemukan!");
+        return;
+      }
+      
+      const data = doc.data();
+      const updatedRiwayat = data.riwayat.filter(item => 
+        item.timestamp.toDate().toISOString() !== paymentDate.toISOString()
+      );
+      
+      // Recalculate total bunga and sisa pokok
+      let totalBunga = 0;
+      let sisaPokok = data.pokokAwal;
+      
+      updatedRiwayat.forEach(item => {
+        totalBunga += item.bayarBunga;
+        sisaPokok -= item.bayarPokok;
+        if (sisaPokok < 0) sisaPokok = 0;
+      });
+      
+      return db.collection("hutang").doc(kreditur).update({
+        totalBunga,
+        riwayat: updatedRiwayat,
+        updatedAt: new Date()
+      });
+    })
+    .then(() => {
+      alert("Pembayaran berhasil dihapus!");
+      loadKrediturList();
+    })
+    .catch(error => {
+      console.error("Error deleting payment: ", error);
+      alert("Gagal menghapus pembayaran: " + error.message);
+    });
+}
+
+// Update all creditors report
+function updateLaporanSemua() {
+  const krediturList = Object.keys(hutangData);
+  const tbody = document.querySelector("#laporanTable tbody");
+  tbody.innerHTML = '';
+  
+  if (krediturList.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-state-row">
+        <td colspan="7">
+          <div class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <p>Belum ada data hutang</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  // Calculate totals
+  let totalPokok = 0;
+  let totalSisa = 0;
+  let totalBunga = 0;
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    
+    totalPokok += data.pokokAwal;
+    totalSisa += sisaPokok;
+    totalBunga += data.totalBunga || 0;
+    
+    const terbayar = data.pokokAwal - sisaPokok;
+    const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+    
+    let status = '';
+    if (sisaPokok <= 0) {
+      status = '<span class="badge success">Lunas</span>';
+    } else if (data.jatuhTempo) {
+      const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
+      if (hariJatuhTempo <= 0) {
+        status = '<span class="badge danger">Jatuh Tempo</span>';
+      } else if (hariJatuhTempo <= 7) {
+        status = '<span class="badge warning">Mendekati Jatuh Tempo</span>';
+      } else {
+        status = '<span class="badge primary">Aktif</span>';
+      }
+    } else {
+      status = '<span class="badge primary">Aktif</span>';
+    }
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${kreditur}</td>
+      <td>${formatRupiah(data.pokokAwal)}</td>
+      <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
+      <td>${formatRupiah(sisaPokok)}</td>
+      <td>${formatRupiah(data.totalBunga || 0)}</td>
+      <td>${status}</td>
+      <td>
+        <button onclick="lihatDetail('${kreditur}')" class="secondary small"><i class="fas fa-eye"></i></button>
+        <button onclick="hapusHutang('${kreditur}')" class="danger small"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  // Update stats
+  document.getElementById("totalKreditur").textContent = krediturList.length;
+  document.getElementById("totalHutang").textContent = formatRupiah(totalPokok);
+  document.getElementById("totalTerbayar").textContent = formatRupiah(totalPokok - totalSisa);
+  document.getElementById("sisaHutang").textContent = formatRupiah(totalSisa);
+  
+  // Update progress bar
+  const persenTerbayar = ((totalPokok - totalSisa) / totalPokok * 100).toFixed(1);
+  document.getElementById("persenHutang").textContent = `${persenTerbayar}% terbayar`;
+  document.getElementById("progressHutang").style.width = `${persenTerbayar}%`;
+}
+
+// Filter creditors
+function filterKreditur() {
+  const searchTerm = document.getElementById("cariKreditur").value.toLowerCase();
+  const sortOption = document.getElementById("sortKreditur").value;
+  
+  const krediturList = Object.keys(hutangData)
+    .filter(kreditur => kreditur.toLowerCase().includes(searchTerm));
+  
+  // Sort based on selected option
+  krediturList.sort((a, b) => {
+    const dataA = hutangData[a];
+    const dataB = hutangData[b];
+    const riwayatA = dataA.riwayat || [];
+    const riwayatB = dataB.riwayat || [];
+    const sisaA = riwayatA.length > 0 ? riwayatA[riwayatA.length - 1].sisaPokok : dataA.pokokAwal;
+    const sisaB = riwayatB.length > 0 ? riwayatB[riwayatB.length - 1].sisaPokok : dataB.pokokAwal;
+    
+    switch (sortOption) {
+      case 'nama-asc': return a.localeCompare(b);
+      case 'nama-desc': return b.localeCompare(a);
+      case 'hutang-asc': return sisaA - sisaB;
+      case 'hutang-desc': return sisaB - sisaA;
+      default: return 0;
+    }
+  });
+  
+  // Update table with filtered and sorted data
+  const tbody = document.querySelector("#laporanTable tbody");
+  tbody.innerHTML = '';
+  
+  if (krediturList.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-state-row">
+        <td colspan="7">
+          <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <p>Tidak ditemukan data hutang</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    const terbayar = data.pokokAwal - sisaPokok;
+    const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+    
+    let status = '';
+    if (sisaPokok <= 0) {
+      status = '<span class="badge success">Lunas</span>';
+    } else if (data.jatuhTempo) {
+      const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
+      if (hariJatuhTempo <= 0) {
+        status = '<span class="badge danger">Jatuh Tempo</span>';
+      } else if (hariJatuhTempo <= 7) {
+        status = '<span class="badge warning">Mendekati Jatuh Tempo</span>';
+      } else {
+        status = '<span class="badge primary">Aktif</span>';
+      }
+    } else {
+      status = '<span class="badge primary">Aktif</span>';
+    }
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${kreditur}</td>
+      <td>${formatRupiah(data.pokokAwal)}</td>
+      <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
+      <td>${formatRupiah(sisaPokok)}</td>
+      <td>${formatRupiah(data.totalBunga || 0)}</td>
+      <td>${status}</td>
+      <td>
+        <button onclick="lihatDetail('${kreditur}')" class="secondary small"><i class="fas fa-eye"></i></button>
+        <button onclick="hapusHutang('${kreditur}')" class="danger small"><i class="fas fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// View creditor details
+function lihatDetail(kreditur) {
+  krediturAktif = kreditur;
+  document.querySelector('.tab[data-tab="hutang"]').click();
+  document.getElementById("namaKreditur").value = kreditur;
+  updateRingkasan(kreditur);
+}
+
+// Delete debt
+function hapusHutang(kreditur) {
+  if (!confirm(`Apakah Anda yakin ingin menghapus semua data hutang untuk ${kreditur}?`)) return;
+  
+  db.collection("hutang").doc(kreditur).delete()
+    .then(() => {
+      alert(`Data hutang untuk ${kreditur} berhasil dihapus!`);
+      loadKrediturList();
+    })
+    .catch(error => {
+      console.error("Error deleting debt: ", error);
+      alert("Gagal menghapus data hutang: " + error.message);
+    });
+}
+
+// Update analysis
+function updateAnalisis() {
+  updateJatuhTempoTable();
+  updateChart();
+}
+
+// Refresh analysis
+function refreshAnalisis() {
+  loadKrediturList();
+}
+
+// Update due date table
+function updateJatuhTempoTable() {
+  const tbody = document.getElementById("jatuhTempoTable");
+  tbody.innerHTML = '';
+  
+  const today = new Date();
+  const krediturDenganJatuhTempo = Object.keys(hutangData)
+    .filter(kreditur => {
+      const data = hutangData[kreditur];
+      if (!data.jatuhTempo) return false;
+      
+      const riwayat = data.riwayat || [];
+      const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+      return sisaPokok > 0;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(hutangData[a].jatuhTempo);
+      const dateB = new Date(hutangData[b].jatuhTempo);
+      return dateA - dateB;
+    });
+  
+  if (krediturDenganJatuhTempo.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5">
+          <div class="empty-state">
+            <i class="fas fa-check-circle"></i>
+            <p>Tidak ada hutang yang jatuh tempo</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  krediturDenganJatuhTempo.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    const hariJatuhTempo = daysBetween(today, data.jatuhTempo);
+    
+    let status = '';
+    if (hariJatuhTempo <= 0) {
+      status = '<span class="badge danger">Telah jatuh tempo</span>';
+    } else if (hariJatuhTempo <= 7) {
+      status = '<span class="badge warning">Mendekati jatuh tempo</span>';
+    } else {
+      status = '<span class="badge primary">Aktif</span>';
+    }
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${kreditur}</td>
+      <td>${formatDate(data.jatuhTempo)}</td>
+      <td>${formatRupiah(sisaPokok)}</td>
+      <td>${hariJatuhTempo <= 0 ? '0' : hariJatuhTempo}</td>
+      <td>${status}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Update chart
+function updateChart() {
+  const ctx = document.createElement('canvas');
+  ctx.id = 'debtChart';
+  const container = document.getElementById('chartContainer');
+  container.innerHTML = '';
+  container.appendChild(ctx);
+  
+  const krediturList = Object.keys(hutangData);
+  if (krediturList.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-chart-pie"></i>
+        <p>Tidak ada data untuk ditampilkan</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Prepare data for chart
+  const labels = [];
+  const pokokData = [];
+  const sisaData = [];
+  const bungaData = [];
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    
+    labels.push(kreditur);
+    pokokData.push(data.pokokAwal);
+    sisaData.push(sisaPokok);
+    bungaData.push(data.totalBunga || 0);
+  });
+  
+  // Destroy previous chart instance if exists
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+  
+  // Create new chart
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Pokok Awal',
+          data: pokokData,
+          backgroundColor: 'rgba(54, 162, 235, 0.7)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Sisa Pokok',
+          data: sisaData,
+          backgroundColor: 'rgba(255, 99, 132, 0.7)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Total Bunga',
+          data: bungaData,
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return formatRupiah(value);
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let label = context.dataset.label || '';
+              if (label) {
+                label += ': ';
+              }
+              label += formatRupiah(context.raw);
+              return label;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// Show payment projection modal
+function lihatProyeksi() {
+  document.getElementById('proyeksiModal').style.display = 'flex';
+  
+  // Set default payment amount to average payment if available
+  const krediturList = Object.keys(hutangData);
+  if (krediturList.length > 0) {
+    let totalSisa = 0;
+    krediturList.forEach(kreditur => {
+      const data = hutangData[kreditur];
+      const riwayat = data.riwayat || [];
+      const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+      totalSisa += sisaPokok;
+    });
+    
+    const avgPayment = Math.ceil(totalSisa / 12);
+    document.getElementById('proyeksiAngsuran').value = avgPayment;
+  }
+}
+
+// Close modal
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+}
+
+// Calculate payment projection
+function hitungProyeksi() {
+  const kreditur = document.getElementById('proyeksiKreditur').value;
+  const bulan = parseInt(document.getElementById('proyeksiBulan').value) || 12;
+  const angsuran = parseInt(document.getElementById('proyeksiAngsuran').value) || 0;
+  
+  if (angsuran <= 0) {
+    alert('Masukkan jumlah angsuran yang valid!');
+    return;
+  }
+  
+  let results = [];
+  
+  if (kreditur) {
+    // Projection for single creditor
+    const data = hutangData[kreditur];
+    if (!data) {
+      alert('Kreditur tidak ditemukan!');
+      return;
+    }
+    
+    const riwayat = data.riwayat || [];
+    let sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    const bungaPersen = data.bungaPersen || 0;
+    
+    let bulanCount = 0;
+    let totalBunga = 0;
+    
+    while (sisaPokok > 0 && bulanCount < bulan) {
+      bulanCount++;
+      const bungaBulanan = sisaPokok * (bungaPersen / 100);
+      const pokokBulanan = Math.min(angsuran - bungaBulanan, sisaPokok);
+      
+      totalBunga += bungaBulanan;
+      sisaPokok -= pokokBulanan;
+      
+      results.push({
+        bulan: bulanCount,
+        pokok: pokokBulanan,
+        bunga: bungaBulanan,
+        sisa: sisaPokok,
+        totalBunga: totalBunga
+      });
+    }
+  } else {
+    // Projection for all creditors
+    let totalSisa = 0;
+    const krediturList = Object.keys(hutangData);
+    
+    krediturList.forEach(kreditur => {
+      const data = hutangData[kreditur];
+      const riwayat = data.riwayat || [];
+      const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+      totalSisa += sisaPokok;
+    });
+    
+    let bulanCount = 0;
+    let sisaTotal = totalSisa;
+    
+    while (sisaTotal > 0 && bulanCount < bulan) {
+      bulanCount++;
+      sisaTotal = Math.max(0, sisaTotal - angsuran);
+      results.push({
+        bulan: bulanCount,
+        pembayaran: angsuran,
+        sisa: sisaTotal
+      });
+    }
+  }
+  
+  displayProyeksiResults(results, kreditur);
+}
+
+// Display projection results
+function displayProyeksiResults(results, kreditur) {
+  const container = document.getElementById('hasilProyeksi');
+  
+  if (results.length === 0) {
+    container.innerHTML = '<p>Tidak ada proyeksi yang dapat ditampilkan.</p>';
+    return;
+  }
+  
+  if (kreditur) {
+    // Single creditor results
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaAwal = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    const bungaPersen = data.bungaPersen || 0;
+    
+    let html = `
+      <h4>Proyeksi Pembayaran untuk ${kreditur}</h4>
+      <p>Bunga: ${bungaPersen}% per bulan</p>
+      <p>Sisa Pokok Awal: ${formatRupiah(sisaAwal)}</p>
+      <p>Estimasi Angsuran per Bulan: ${formatRupiah(document.getElementById('proyeksiAngsuran').value)}</p>
+      
+      <table style="width: 100%; margin-top: 15px;">
+        <thead>
+          <tr>
+            <th>Bulan ke-</th>
+            <th>Pokok</th>
+            <th>Bunga</th>
+            <th>Total Bunga</th>
+            <th>Sisa Pokok</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    results.forEach(item => {
+      html += `
+        <tr>
+          <td>${item.bulan}</td>
+          <td>${formatRupiah(item.pokok)}</td>
+          <td>${formatRupiah(item.bunga)}</td>
+          <td>${formatRupiah(item.totalBunga)}</td>
+          <td>${formatRupiah(item.sisa)}</td>
+        </tr>
+      `;
+    });
+    
+    html += `
+        </tbody>
+      </table>
+      <p style="margin-top: 10px;">
+        Estimasi waktu pelunasan: ${results.length} bulan<br>
+        Total bunga yang akan dibayar: ${formatRupiah(results[results.length - 1].totalBunga)}
+      </p>
+    `;
+    
+    container.innerHTML = html;
+  } else {
+    // All creditors results
+    const totalAwal = results[0].sisa + results[0].pembayaran;
+    
+    let html = `
+      <h4>Proyeksi Pembayaran untuk Semua Kreditur</h4>
+      <p>Total Hutang: ${formatRupiah(totalAwal)}</p>
+      <p>Estimasi Angsuran per Bulan: ${formatRupiah(document.getElementById('proyeksiAngsuran').value)}</p>
+      
+      <table style="width: 100%; margin-top: 15px;">
+        <thead>
+          <tr>
+            <th>Bulan ke-</th>
+            <th>Pembayaran</th>
+            <th>Sisa Hutang</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    results.forEach(item => {
+      html += `
+        <tr>
+          <td>${item.bulan}</td>
+          <td>${formatRupiah(item.pembayaran)}</td>
+          <td>${formatRupiah(item.sisa)}</td>
+        </tr>
+      `;
+    });
+    
+    html += `
+        </tbody>
+      </table>
+      <p style="margin-top: 10px;">
+        Estimasi waktu pelunasan: ${results.length} bulan
+      </p>
+    `;
+    
+    container.innerHTML = html;
+  }
+}
+
+// Share report via WhatsApp
 function shareWhatsApp() {
-  let msg = `Hutang ke ${krediturAktif}\nPokok Awal: ${formatRupiah(pokokAwal)}\nSisa: ${formatRupiah(sisaPokok)}\nTotal Bunga: ${formatRupiah(totalBunga)}\n\nRiwayat:\n`;
-  msg += riwayat.map(p => `${p.tanggal}: Pokok ${formatRupiah(p.bayarPokok)}, Bunga ${formatRupiah(p.bayarBunga)}`).join("\n");
+  if (!krediturAktif || !hutangData[krediturAktif]) {
+    alert("Pilih kreditur terlebih dahulu!");
+    return;
+  }
+  
+  const data = hutangData[krediturAktif];
+  const riwayat = data.riwayat || [];
+  const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+  const terbayar = data.pokokAwal - sisaPokok;
+  const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+  
+  let msg = `*Hutang ke ${krediturAktif}*\n\n`;
+  msg += `Pokok Awal: ${formatRupiah(data.pokokAwal)}\n`;
+  msg += `Terbayar: ${formatRupiah(terbayar)} (${persenTerbayar}%)\n`;
+  msg += `Sisa Pokok: ${formatRupiah(sisaPokok)}\n`;
+  msg += `Total Bunga: ${formatRupiah(data.totalBunga || 0)}\n`;
+  
+  if (data.bungaPersen) {
+    msg += `Bunga per Bulan: ${data.bungaPersen}%\n`;
+  }
+  
+  if (data.jatuhTempo) {
+    const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
+    msg += `Jatuh Tempo: ${formatDate(data.jatuhTempo)} (${hariJatuhTempo <= 0 ? 'Telah jatuh tempo' : `${hariJatuhTempo} hari lagi`})\n`;
+  }
+  
+  if (data.catatan) {
+    msg += `\nCatatan: ${data.catatan}\n`;
+  }
+  
+  msg += `\n*Riwayat Pembayaran:*\n`;
+  
+  if (riwayat.length > 0) {
+    riwayat.forEach((item, index) => {
+      msg += `\n${index + 1}. ${formatDate(item.tanggal)}\n`;
+      msg += `   Pokok: ${formatRupiah(item.bayarPokok)}\n`;
+      msg += `   Bunga: ${formatRupiah(item.bayarBunga)}\n`;
+      msg += `   Sisa: ${formatRupiah(item.sisaPokok)}\n`;
+      if (item.catatan) {
+        msg += `   Catatan: ${item.catatan}\n`;
+      }
+    });
+  } else {
+    msg += `Belum ada riwayat pembayaran\n`;
+  }
+  
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 }
 
-function exportPDF() {
-  html2pdf().from(document.getElementById("content")).save(`hutang-${krediturAktif}.pdf`);
-}
-
+// Share all report via WhatsApp
 function shareLaporanSemua() {
-  db.collection("hutang").get().then(snapshot => {
-    let msg = `📊 Laporan Semua Kreditur\n\n`;
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const sisa = data.riwayat?.length ? data.riwayat[data.riwayat.length - 1].sisaPokok : data.pokokAwal;
-      msg += `• ${doc.id}:\n   Pokok: ${formatRupiah(data.pokokAwal)}\n   Sisa: ${formatRupiah(sisa)}\n   Bunga: ${formatRupiah(data.totalBunga)}\n\n`;
-    });
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  const krediturList = Object.keys(hutangData);
+  
+  if (krediturList.length === 0) {
+    alert("Belum ada data hutang!");
+    return;
+  }
+  
+  let msg = `*Laporan Semua Hutang*\n\n`;
+  
+  // Calculate totals
+  let totalPokok = 0;
+  let totalSisa = 0;
+  let totalBunga = 0;
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    
+    totalPokok += data.pokokAwal;
+    totalSisa += sisaPokok;
+    totalBunga += data.totalBunga || 0;
   });
+  
+  const totalTerbayar = totalPokok - totalSisa;
+  const persenTerbayar = ((totalTerbayar / totalPokok) * 100).toFixed(1);
+  
+  msg += `*Total Hutang:* ${formatRupiah(totalPokok)}\n`;
+  msg += `*Total Terbayar:* ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)\n`;
+  msg += `*Sisa Hutang:* ${formatRupiah(totalSisa)}\n`;
+  msg += `*Total Bunga:* ${formatRupiah(totalBunga)}\n\n`;
+  
+  msg += `*Detail Kreditur:*\n\n`;
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    const terbayar = data.pokokAwal - sisaPokok;
+    const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+    
+    msg += `*${kreditur}*\n`;
+    msg += `Pokok: ${formatRupiah(data.pokokAwal)}\n`;
+    msg += `Terbayar: ${formatRupiah(terbayar)} (${persenTerbayar}%)\n`;
+    msg += `Sisa: ${formatRupiah(sisaPokok)}\n`;
+    msg += `Bunga: ${formatRupiah(data.totalBunga || 0)}\n`;
+    
+    if (data.jatuhTempo) {
+      const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
+      msg += `Jatuh Tempo: ${formatDate(data.jatuhTempo)} (${hariJatuhTempo <= 0 ? 'Telah jatuh tempo' : `${hariJatuhTempo} hari lagi`})\n`;
+    }
+    
+    msg += `\n`;
+  });
+  
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 }
 
+// Export to PDF
+function exportPDF() {
+  if (!krediturAktif || !hutangData[krediturAktif]) {
+    alert("Pilih kreditur terlebih dahulu!");
+    return;
+  }
+  
+  const data = hutangData[krediturAktif];
+  const riwayat = data.riwayat || [];
+  const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+  const terbayar = data.pokokAwal - sisaPokok;
+  const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+  
+  let html = `
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      h1 { color: #4a6bff; text-align: center; }
+      .summary { margin-bottom: 20px; padding: 15px; background: #f5f7fa; border-radius: 8px; }
+      .summary-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      th { background: #4a6bff; color: white; padding: 8px; text-align: left; }
+      td { padding: 8px; border-bottom: 1px solid #ddd; }
+      .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
+    </style>
+    
+    <h1>Laporan Hutang - ${krediturAktif}</h1>
+    <div class="summary">
+      <div class="summary-item">
+        <strong>Pokok Awal:</strong> ${formatRupiah(data.pokokAwal)}
+      </div>
+      <div class="summary-item">
+        <strong>Terbayar:</strong> ${formatRupiah(terbayar)} (${persenTerbayar}%)
+      </div>
+      <div class="summary-item">
+        <strong>Sisa Pokok:</strong> ${formatRupiah(sisaPokok)}
+      </div>
+      <div class="summary-item">
+        <strong>Total Bunga:</strong> ${formatRupiah(data.totalBunga || 0)}
+      </div>
+      ${data.bungaPersen ? `
+      <div class="summary-item">
+        <strong>Bunga per Bulan:</strong> ${data.bungaPersen}%
+      </div>` : ''}
+      ${data.jatuhTempo ? `
+      <div class="summary-item">
+        <strong>Jatuh Tempo:</strong> ${formatDate(data.jatuhTempo)}
+      </div>` : ''}
+      ${data.catatan ? `
+      <div class="summary-item">
+        <strong>Catatan:</strong> ${data.catatan}
+      </div>` : ''}
+    </div>
+    
+    <h3>Riwayat Pembayaran</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Tanggal</th>
+          <th>Pokok</th>
+          <th>Bunga</th>
+          <th>Sisa</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  if (riwayat.length > 0) {
+    riwayat.forEach((item, index) => {
+      html += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${formatDate(item.tanggal)}</td>
+          <td>${formatRupiah(item.bayarPokok)}</td>
+          <td>${formatRupiah(item.bayarBunga)}</td>
+          <td>${formatRupiah(item.sisaPokok)}</td>
+        </tr>
+      `;
+    });
+  } else {
+    html += `
+      <tr>
+        <td colspan="5" style="text-align: center;">Belum ada riwayat pembayaran</td>
+      </tr>
+    `;
+  }
+  
+  html += `
+      </tbody>
+    </table>
+    <div class="footer">
+      Dicetak pada ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    </div>
+  `;
+  
+  const opt = {
+    margin: 10,
+    filename: `hutang_${krediturAktif}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  html2pdf().set(opt).from(html).save();
+}
+
+// Export all report to PDF
 function exportLaporanPDF() {
-  html2pdf().from(document.getElementById("laporanSemua")).save("laporan-semua-kreditur.pdf");
+  const krediturList = Object.keys(hutangData);
+  
+  if (krediturList.length === 0) {
+    alert("Belum ada data hutang!");
+    return;
+  }
+  
+  // Calculate totals
+  let totalPokok = 0;
+  let totalSisa = 0;
+  let totalBunga = 0;
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    
+    totalPokok += data.pokokAwal;
+    totalSisa += sisaPokok;
+    totalBunga += data.totalBunga || 0;
+  });
+  
+  const totalTerbayar = totalPokok - totalSisa;
+  const persenTerbayar = ((totalTerbayar / totalPokok) * 100).toFixed(1);
+  
+  let html = `
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      h1 { color: #4a6bff; text-align: center; }
+      .summary { margin-bottom: 20px; padding: 15px; background: #f5f7fa; border-radius: 8px; }
+      .summary-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      th { background: #4a6bff; color: white; padding: 8px; text-align: left; }
+      td { padding: 8px; border-bottom: 1px solid #ddd; }
+      .footer { margin-top: 30px; text-align: right; font-size: 12px; color: #666; }
+      .status-lunas { color: #2ed573; font-weight: bold; }
+      .status-jatuh-tempo { color: #ff4757; font-weight: bold; }
+      .status-aktif { color: #4a6bff; font-weight: bold; }
+    </style>
+    
+    <h1>Laporan Semua Hutang</h1>
+    <div class="summary">
+      <div class="summary-item">
+        <strong>Total Hutang:</strong> ${formatRupiah(totalPokok)}
+      </div>
+      <div class="summary-item">
+        <strong>Total Terbayar:</strong> ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)
+      </div>
+      <div class="summary-item">
+        <strong>Sisa Hutang:</strong> ${formatRupiah(totalSisa)}
+      </div>
+      <div class="summary-item">
+        <strong>Total Bunga:</strong> ${formatRupiah(totalBunga)}
+      </div>
+    </div>
+    
+    <h3>Detail Kreditur</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Kreditur</th>
+          <th>Pokok</th>
+          <th>Terbayar</th>
+          <th>Sisa</th>
+          <th>Bunga</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  krediturList.forEach(kreditur => {
+    const data = hutangData[kreditur];
+    const riwayat = data.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    const terbayar = data.pokokAwal - sisaPokok;
+    const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
+    
+    let status = '';
+    let statusClass = '';
+    if (sisaPokok <= 0) {
+      status = 'Lunas';
+      statusClass = 'status-lunas';
+    } else if (data.jatuhTempo) {
+      const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
+      if (hariJatuhTempo <= 0) {
+        status = 'Jatuh Tempo';
+        statusClass = 'status-jatuh-tempo';
+      } else if (hariJatuhTempo <= 7) {
+        status = 'Mendekati Jatuh Tempo';
+        statusClass = 'status-aktif';
+      } else {
+        status = 'Aktif';
+        statusClass = 'status-aktif';
+      }
+    } else {
+      status = 'Aktif';
+      statusClass = 'status-aktif';
+    }
+    
+    html += `
+      <tr>
+        <td>${kreditur}</td>
+        <td>${formatRupiah(data.pokokAwal)}</td>
+        <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
+        <td>${formatRupiah(sisaPokok)}</td>
+        <td>${formatRupiah(data.totalBunga || 0)}</td>
+        <td class="${statusClass}">${status}</td>
+      </tr>
+    `;
+  });
+  
+  html += `
+      </tbody>
+    </table>
+    <div class="footer">
+      Dicetak pada ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    </div>
+  `;
+  
+  const opt = {
+    margin: 10,
+    filename: 'laporan_semua_hutang.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  html2pdf().set(opt).from(html).save();
 }
 
-window.onload = loadKrediturList;
-</script></body>
+// Export to Excel
+function exportLaporanExcel() {
+  const krediturList = Object.keys(hutangData);
+  
+  if (krediturList.length === 0) {
+    alert("Belum ada data hutang!");
+    return;
+  }
+  
+  // Prepare data
+  const data = [
+    ['Nama Kreditur', 'Pokok Awal', 'Terbayar', 'Sisa Pokok', 'Total Bunga', 'Status', 'Jatuh Tempo', 'Catatan']
+  ];
+  
+  krediturList.forEach(kreditur => {
+    const item = hutangData[kreditur];
+    const riwayat = item.riwayat || [];
+    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : item.pokokAwal;
+    const terbayar = item.pokokAwal - sisaPokok;
+    
+    let status = '';
+    if (sisaPokok <= 0) {
+      status = 'Lunas';
+    } else if (item.jatuhTempo) {
+      const hariJatuhTempo = daysBetween(new Date(), item.jatuhTempo);
+      if (hariJatuhTempo <= 0) {
+        status = 'Jatuh Tempo';
+      } else if (hariJatuhTempo <= 7) {
+        status = 'Mendekati Jatuh Tempo';
+      } else {
+        status = 'Aktif';
+      }
+    } else {
+      status = 'Aktif';
+    }
+    
+    data.push([
+      kreditur,
+      item.pokokAwal,
+      terbayar,
+      sisaPokok,
+      item.totalBunga || 0,
+      status,
+      item.jatuhTempo ? formatDate(item.jatuhTempo) : '-',
+      item.catatan || '-'
+    ]);
+  });
+  
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "Laporan Hutang");
+  
+  // Export to file
+  XLSX.writeFile(wb, "laporan_hutang.xlsx");
+}
+
+// Initialize the app when loaded
+window.onload = initApp;
+</script>
+</body>
 </html>
