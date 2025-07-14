@@ -512,7 +512,21 @@
       <label for="pokokAwal"><i class="fas fa-coins"></i> Pokok Awal (Rp)</label>
       <input type="number" id="pokokAwal" placeholder="Jumlah hutang awal" />
     </div>
-    
+
+    <div class="form-group">
+      <label for="uangMuka"><i class="fas fa-money-check-alt"></i> Uang Muka (DP - Rp) (Opsional)</label>
+      <input type="number" id="uangMuka" value="0" placeholder="Jumlah uang muka" />
+    </div>
+
+    <div class="form-group">
+      <label for="jumlahCicilan"><i class="fas fa-hand-holding-usd"></i> Jumlah Cicilan per Bulan (Rp) (Opsional)</label>
+      <input type="number" id="jumlahCicilan" value="0" placeholder="Estimasi angsuran per bulan" />
+    </div>
+
+    <div class="form-group">
+      <label for="jangkaWaktu"><i class="fas fa-clock"></i> Jangka Waktu Kredit (Bulan) (Opsional)</label>
+      <input type="number" id="jangkaWaktu" value="0" min="0" placeholder="Durasi kredit dalam bulan" />
+    </div>
     <div class="form-group">
       <label for="bungaPersen"><i class="fas fa-percentage"></i> Bunga (%) per Bulan (Opsional)</label>
       <input type="number" id="bungaPersen" placeholder="Persentase bunga bulanan" />
@@ -647,14 +661,14 @@
             <th>Terbayar</th>
             <th>Sisa Pokok</th>
             <th>Total Bunga</th>
-            <th>Tanggal Mulai</th>
+            <th>Tanggal Mulai</th> 
             <th>Status</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
           <tr class="empty-state-row">
-            <td colspan="8">
+            <td colspan="8"> 
               <div class="empty-state">
                 <i class="fas fa-file-alt"></i>
                 <p>Belum ada data hutang</p>
@@ -953,6 +967,9 @@ function setupTabNavigation() {
 function resetForm() {
   document.getElementById('namaKreditur').value = '';
   document.getElementById('pokokAwal').value = '';
+  document.getElementById('uangMuka').value = '0'; // Reset new field
+  document.getElementById('jumlahCicilan').value = '0'; // Reset new field
+  document.getElementById('jangkaWaktu').value = '0'; // Reset new field
   document.getElementById('bungaPersen').value = '';
   document.getElementById('jatuhTempo').value = '';
   document.getElementById('catatan').value = '';
@@ -969,12 +986,15 @@ function resetFormPembayaran() {
 // Save new debt
 function simpanHutangBaru() {
   const nama = document.getElementById("namaKreditur").value.trim();
-  const pokok = parseInt(document.getElementById("pokokAwal").value) || 0;
+  const pokokAwal = parseInt(document.getElementById("pokokAwal").value) || 0;
+  const uangMuka = parseInt(document.getElementById("uangMuka").value) || 0; // New field
+  const jumlahCicilan = parseInt(document.getElementById("jumlahCicilan").value) || 0; // New field
+  const jangkaWaktu = parseInt(document.getElementById("jangkaWaktu").value) || 0; // New field
   const bungaPersen = parseFloat(document.getElementById("bungaPersen").value) || 0;
   const jatuhTempo = document.getElementById("jatuhTempo").value;
   const catatan = document.getElementById("catatan").value.trim();
   
-  if (!nama || !pokok) {
+  if (!nama || !pokokAwal) {
     alert("Nama kreditur dan pokok awal harus diisi!");
     return;
   }
@@ -982,7 +1002,10 @@ function simpanHutangBaru() {
   krediturAktif = nama;
   
   const data = {
-    pokokAwal: pokok,
+    pokokAwal: pokokAwal,
+    uangMuka: uangMuka, // Save new field
+    jumlahCicilan: jumlahCicilan, // Save new field
+    jangkaWaktu: jangkaWaktu, // Save new field
     bungaPersen: bungaPersen,
     jatuhTempo: jatuhTempo || null,
     catatan: catatan || null,
@@ -1042,7 +1065,7 @@ function simpanPembayaran() {
         bayarBunga,
         sisaPokok,
         catatan: catatan || null,
-        timestamp: new Date().toISOString() // Use local ISO string for timestamp in array to avoid FieldValue.serverTimestamp() issue
+        timestamp: new Date().toISOString() // Using ISO string to avoid FieldValue.serverTimestamp() in array issue
       };
       
       const updatedRiwayat = [...data.riwayat, pembayaran];
@@ -1147,7 +1170,11 @@ function updateRingkasan(nama) {
   
   const data = hutangData[nama];
   const riwayat = data.riwayat || [];
-  const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+  let sisaPokok = data.pokokAwal - (data.uangMuka || 0); // Consider DP in initial remaining
+  if (riwayat.length > 0) {
+      sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+  }
+
   const terbayar = data.pokokAwal - sisaPokok;
   const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
   
@@ -1175,6 +1202,9 @@ function updateRingkasan(nama) {
       <span>Pokok Awal:</span> 
       <strong>${formatRupiah(data.pokokAwal)}</strong>
     </div>
+    ${data.uangMuka > 0 ? `<div class="summary-item"><span>Uang Muka (DP):</span> <strong>${formatRupiah(data.uangMuka)}</strong></div>` : ''}
+    ${data.jumlahCicilan > 0 ? `<div class="summary-item"><span>Cicilan per Bulan:</span> <strong>${formatRupiah(data.jumlahCicilan)}</strong></div>` : ''}
+    ${data.jangkaWaktu > 0 ? `<div class="summary-item"><span>Jangka Waktu:</span> <strong>${data.jangkaWaktu} bulan</strong></div>` : ''}
     <div class="summary-item">
       <span>Terbayar:</span> 
       <strong>${formatRupiah(terbayar)} (${persenTerbayar}%)</strong>
@@ -1325,17 +1355,20 @@ function updateLaporanSemua() {
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let currentSisaPokok = data.pokokAwal - (data.uangMuka || 0); // Start with initial pokok minus DP
+    if (riwayat.length > 0) {
+        currentSisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     
     totalPokok += data.pokokAwal;
-    totalSisa += sisaPokok;
+    totalSisa += currentSisaPokok;
     totalBunga += data.totalBunga || 0;
     
-    const terbayar = data.pokokAwal - sisaPokok;
+    const terbayar = data.pokokAwal - currentSisaPokok;
     const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
     
     let status = '';
-    if (sisaPokok <= 0) {
+    if (currentSisaPokok <= 0) {
       status = '<span class="badge success">Lunas</span>';
     } else if (data.jatuhTempo) {
       const hariJatuhTempo = daysBetween(new Date(), data.jatuhTempo);
@@ -1355,7 +1388,7 @@ function updateLaporanSemua() {
       <td>${kreditur}</td>
       <td>${formatRupiah(data.pokokAwal)}</td>
       <td>${formatRupiah(terbayar)} (${persenTerbayar}%)</td>
-      <td>${formatRupiah(sisaPokok)}</td>
+      <td>${formatRupiah(currentSisaPokok)}</td>
       <td>${formatRupiah(data.totalBunga || 0)}</td>
       <td>${data.createdAt ? formatDate(data.createdAt) : '-'}</td> <td>${status}</td>
       <td>
@@ -1449,8 +1482,11 @@ function filterKreditur() {
     const dataB = hutangData[b];
     const riwayatA = dataA.riwayat || [];
     const riwayatB = dataB.riwayat || [];
-    const sisaA = riwayatA.length > 0 ? riwayatA[riwayatA.length - 1].sisaPokok : dataA.pokokAwal;
-    const sisaB = riwayatB.length > 0 ? riwayatB[riwayatB.length - 1].sisaPokok : dataB.pokokAwal;
+    let sisaA = dataA.pokokAwal - (dataA.uangMuka || 0);
+    if (riwayatA.length > 0) sisaA = riwayatA[riwayatA.length - 1].sisaPokok;
+
+    let sisaB = dataB.pokokAwal - (dataB.uangMuka || 0);
+    if (riwayatB.length > 0) sisaB = riwayatB[riwayatB.length - 1].sisaPokok;
     
     switch (sortOption) {
       case 'nama-asc': return a.localeCompare(b);
@@ -1481,7 +1517,9 @@ function filterKreditur() {
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaPokok = data.pokokAwal - (data.uangMuka || 0);
+    if (riwayat.length > 0) sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+
     const terbayar = data.pokokAwal - sisaPokok;
     const persenTerbayar = ((terbayar / data.pokokAwal) * 100).toFixed(1);
     
@@ -1564,7 +1602,10 @@ function updateJatuhTempoTable() {
       if (!data.jatuhTempo) return false;
       
       const riwayat = data.riwayat || [];
-      const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+      let sisaPokok = data.pokokAwal - (data.uangMuka || 0); // Consider DP
+      if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+      }
       return sisaPokok > 0;
     })
     .sort((a, b) => {
@@ -1590,7 +1631,10 @@ function updateJatuhTempoTable() {
   krediturDenganJatuhTempo.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaPokok = data.pokokAwal - (data.uangMuka || 0);
+    if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     const hariJatuhTempo = daysBetween(today, data.jatuhTempo);
     
     let status = '';
@@ -1642,7 +1686,10 @@ function updateChart() {
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaPokok = data.pokokAwal - (data.uangMuka || 0); // Consider DP
+    if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     
     labels.push(kreditur);
     pokokData.push(data.pokokAwal);
@@ -1725,8 +1772,11 @@ function lihatProyeksi() {
     krediturList.forEach(kreditur => {
       const data = hutangData[kreditur];
       const riwayat = data.riwayat || [];
-      const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
-      totalSisa += sisaPokok;
+      let currentSisaPokok = data.pokokAwal - (data.uangMuka || 0); // Consider DP
+      if (riwayat.length > 0) {
+        currentSisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+      }
+      totalSisa += currentSisaPokok;
     });
     
     const avgPayment = Math.ceil(totalSisa / 12);
@@ -1761,7 +1811,10 @@ function hitungProyeksi() {
     }
     
     const riwayat = data.riwayat || [];
-    let sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaPokok = data.pokokAwal - (data.uangMuka || 0); // Start with initial pokok minus DP
+    if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     const bungaPersen = data.bungaPersen || 0;
     
     let bulanCount = 0;
@@ -1791,8 +1844,11 @@ function hitungProyeksi() {
     krediturList.forEach(kreditur => {
       const data = hutangData[kreditur];
       const riwayat = data.riwayat || [];
-      const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
-      totalSisa += sisaPokok;
+      let currentSisaPokok = data.pokokAwal - (data.uangMuka || 0); // Consider DP
+      if (riwayat.length > 0) {
+        currentSisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+      }
+      totalSisa += currentSisaPokok;
     });
     
     let bulanCount = 0;
@@ -1825,7 +1881,10 @@ function displayProyeksiResults(results, kreditur) {
     // Single creditor results
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaAwal = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaAwal = data.pokokAwal - (data.uangMuka || 0); // Start with initial pokok minus DP
+    if (riwayat.length > 0) {
+        sisaAwal = riwayat[riwayat.length - 1].sisaPokok;
+    }
     const bungaPersen = data.bungaPersen || 0;
     
     let html = `
@@ -1871,11 +1930,21 @@ function displayProyeksiResults(results, kreditur) {
     container.innerHTML = html;
   } else {
     // All creditors results
-    const totalAwal = results[0].sisa + results[0].pembayaran;
-    
+    // Recalculate total initial remaining debt after DP for display
+    let initialTotalRemaining = 0;
+    Object.keys(hutangData).forEach(kreditur => {
+        const data = hutangData[kreditur];
+        const riwayat = data.riwayat || [];
+        let sisaPokokInitial = data.pokokAwal - (data.uangMuka || 0);
+        if (riwayat.length > 0) {
+            sisaPokokInitial = riwayat[riwayat.length - 1].sisaPokok;
+        }
+        initialTotalRemaining += sisaPokokInitial;
+    });
+
     let html = `
       <h4>Proyeksi Pembayaran untuk Semua Kreditur</h4>
-      <p>Total Hutang: ${formatRupiah(totalAwal)}</p>
+      <p>Total Hutang (Setelah DP): ${formatRupiah(initialTotalRemaining)}</p>
       <p>Estimasi Angsuran per Bulan: ${formatRupiah(document.getElementById('proyeksiAngsuran').value)}</p>
       
       <table style="width: 100%; margin-top: 15px;">
@@ -1911,7 +1980,7 @@ function displayProyeksiResults(results, kreditur) {
   }
 }
 
-// Share report via WhatsApp (Updated to include all payment history)
+// Share report via WhatsApp (Updated to include DP, Cicilan, Jangka Waktu, and all payment history)
 function shareLaporanSemua() {
   const krediturList = Object.keys(hutangData);
   
@@ -1923,42 +1992,54 @@ function shareLaporanSemua() {
   let msg = `*Laporan Semua Hutang*\n\n`;
   
   // Calculate totals
-  let totalPokok = 0;
+  let totalPokokAwal = 0;
   let totalSisa = 0;
   let totalBunga = 0;
+  let totalUangMuka = 0; // New total
   
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let currentSisaPokok = data.pokokAwal - (data.uangMuka || 0); // Start with initial pokok minus DP
+    if (riwayat.length > 0) {
+        currentSisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     
-    totalPokok += data.pokokAwal;
-    totalSisa += sisaPokok;
+    totalPokokAwal += data.pokokAwal;
+    totalUangMuka += (data.uangMuka || 0); // Add to total DP
+    totalSisa += currentSisaPokok;
     totalBunga += data.totalBunga || 0;
   });
   
-  const totalTerbayar = totalPokok > 0 ? (totalPokok - totalSisa) : 0;
-  const persenTerbayar = totalPokok > 0 ? ((totalTerbayar / totalPokok) * 100).toFixed(1) : 0;
+  const totalTerbayar = totalPokokAwal - totalSisa;
+  const persenTerbayar = totalPokokAwal > 0 ? ((totalTerbayar / totalPokokAwal) * 100).toFixed(1) : 0;
   
-  msg += `*Total Hutang:* ${formatRupiah(totalPokok)}\n`;
-  msg += `*Total Terbayar:* ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)\n`;
-  msg += `*Sisa Hutang:* ${formatRupiah(totalSisa)}\n`;
-  msg += `*Total Bunga:* ${formatRupiah(totalBunga)}\n\n`;
+  msg += `*Total Hutang Awal:* ${formatRupiah(totalPokokAwal)}\n`;
+  msg += `*Total Uang Muka:* ${formatRupiah(totalUangMuka)}\n`; // New line
+  msg += `*Total Terbayar (Pokok):* ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)\n`;
+  msg += `*Sisa Hutang Pokok:* ${formatRupiah(totalSisa)}\n`;
+  msg += `*Total Bunga Dibayar:* ${formatRupiah(totalBunga)}\n\n`;
   
   msg += `*Detail Kreditur:*\n\n`;
   
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaPokok = data.pokokAwal - (data.uangMuka || 0);
+    if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     const terbayar = data.pokokAwal - sisaPokok;
     const persenTerbayarKreditur = data.pokokAwal > 0 ? ((terbayar / data.pokokAwal) * 100).toFixed(1) : 0;
     
     msg += `*${kreditur}*\n`;
-    msg += `Pokok: ${formatRupiah(data.pokokAwal)}\n`;
-    msg += `Terbayar: ${formatRupiah(terbayar)} (${persenTerbayarKreditur}%)\n`;
-    msg += `Sisa: ${formatRupiah(sisaPokok)}\n`;
-    msg += `Bunga: ${formatRupiah(data.totalBunga || 0)}\n`;
+    msg += `Pokok Awal: ${formatRupiah(data.pokokAwal)}\n`;
+    if (data.uangMuka > 0) msg += `Uang Muka: ${formatRupiah(data.uangMuka)}\n`;
+    if (data.jumlahCicilan > 0) msg += `Cicilan per Bulan: ${formatRupiah(data.jumlahCicilan)}\n`;
+    if (data.jangkaWaktu > 0) msg += `Jangka Waktu: ${data.jangkaWaktu} bulan\n`;
+    msg += `Terbayar (Pokok): ${formatRupiah(terbayar)} (${persenTerbayarKreditur}%)\n`;
+    msg += `Sisa Pokok: ${formatRupiah(sisaPokok)}\n`;
+    msg += `Bunga Dibayar: ${formatRupiah(data.totalBunga || 0)}\n`;
     
     if (data.createdAt) {
       msg += `Tanggal Mulai: ${formatDate(data.createdAt)}\n`;
@@ -2009,7 +2090,7 @@ function shareLaporanSemua() {
   window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
 }
 
-// Export all report to PDF (updated to include Tanggal Mulai and All Payments History)
+// Export all report to PDF (updated to include DP, Cicilan, Jangka Waktu, Tanggal Mulai and All Payments History)
 function exportLaporanPDF() {
   const krediturList = Object.keys(hutangData);
   
@@ -2019,22 +2100,27 @@ function exportLaporanPDF() {
   }
   
   // Calculate totals
-  let totalPokok = 0;
+  let totalPokokAwal = 0;
   let totalSisa = 0;
   let totalBunga = 0;
+  let totalUangMuka = 0;
   
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let currentSisaPokok = data.pokokAwal - (data.uangMuka || 0);
+    if (riwayat.length > 0) {
+        currentSisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     
-    totalPokok += data.pokokAwal;
-    totalSisa += sisaPokok;
+    totalPokokAwal += data.pokokAwal;
+    totalUangMuka += (data.uangMuka || 0);
+    totalSisa += currentSisaPokok;
     totalBunga += data.totalBunga || 0;
   });
   
-  const totalTerbayar = totalPokok > 0 ? (totalPokok - totalSisa) : 0;
-  const persenTerbayar = totalPokok > 0 ? ((totalTerbayar / totalPokok) * 100).toFixed(1) : 0;
+  const totalTerbayar = totalPokokAwal > 0 ? (totalPokokAwal - totalSisa) : 0;
+  const persenTerbayar = totalPokokAwal > 0 ? ((totalTerbayar / totalPokokAwal) * 100).toFixed(1) : 0;
   
   let html = `
     <style>
@@ -2055,16 +2141,19 @@ function exportLaporanPDF() {
     <h1>Laporan Semua Hutang</h1>
     <div class="summary">
       <div class="summary-item">
-        <strong>Total Hutang:</strong> ${formatRupiah(totalPokok)}
+        <strong>Total Hutang Awal:</strong> ${formatRupiah(totalPokokAwal)}
       </div>
       <div class="summary-item">
-        <strong>Total Terbayar:</strong> ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)
+        <strong>Total Uang Muka:</strong> ${formatRupiah(totalUangMuka)}
       </div>
       <div class="summary-item">
-        <strong>Sisa Hutang:</strong> ${formatRupiah(totalSisa)}
+        <strong>Total Terbayar (Pokok):</strong> ${formatRupiah(totalTerbayar)} (${persenTerbayar}%)
       </div>
       <div class="summary-item">
-        <strong>Total Bunga:</strong> ${formatRupiah(totalBunga)}
+        <strong>Sisa Hutang Pokok:</strong> ${formatRupiah(totalSisa)}
+      </div>
+      <div class="summary-item">
+        <strong>Total Bunga Dibayar:</strong> ${formatRupiah(totalBunga)}
       </div>
     </div>
     
@@ -2073,10 +2162,13 @@ function exportLaporanPDF() {
       <thead>
         <tr>
           <th>Kreditur</th>
-          <th>Pokok</th>
+          <th>Pokok Awal</th>
+          <th>Uang Muka</th>
+          <th>Cicilan/Bulan</th>
+          <th>Jangka Waktu</th>
           <th>Terbayar</th>
-          <th>Sisa</th>
-          <th>Bunga</th>
+          <th>Sisa Pokok</th>
+          <th>Total Bunga</th>
           <th>Tgl Mulai</th>
           <th>Status</th>
         </tr>
@@ -2087,7 +2179,10 @@ function exportLaporanPDF() {
   krediturList.forEach(kreditur => {
     const data = hutangData[kreditur];
     const riwayat = data.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+    let sisaPokok = data.pokokAwal - (data.uangMuka || 0);
+    if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     const terbayar = data.pokokAwal - sisaPokok;
     const persenTerbayarKreditur = data.pokokAwal > 0 ? ((terbayar / data.pokokAwal) * 100).toFixed(1) : 0;
     
@@ -2117,6 +2212,9 @@ function exportLaporanPDF() {
       <tr>
         <td>${kreditur}</td>
         <td>${formatRupiah(data.pokokAwal)}</td>
+        <td>${formatRupiah(data.uangMuka || 0)}</td>
+        <td>${formatRupiah(data.jumlahCicilan || 0)}</td>
+        <td>${(data.jangkaWaktu || 0) > 0 ? data.jangkaWaktu + ' bln' : '-'}</td>
         <td>${formatRupiah(terbayar)} (${persenTerbayarKreditur}%)</td>
         <td>${formatRupiah(sisaPokok)}</td>
         <td>${formatRupiah(data.totalBunga || 0)}</td>
@@ -2206,7 +2304,7 @@ function exportLaporanPDF() {
   html2pdf().set(opt).from(html).save();
 }
 
-// Export to Excel (Updated to include Tanggal Mulai and All Payments History)
+// Export to Excel (Updated to include DP, Cicilan, Jangka Waktu, Tanggal Mulai and All Payments History)
 function exportLaporanExcel() {
   const krediturList = Object.keys(hutangData);
   
@@ -2217,13 +2315,16 @@ function exportLaporanExcel() {
   
   // Prepare data for "Laporan Hutang" sheet
   const laporanHutangData = [
-    ['Nama Kreditur', 'Pokok Awal', 'Terbayar', 'Sisa Pokok', 'Total Bunga', 'Tanggal Mulai', 'Status', 'Jatuh Tempo', 'Catatan']
+    ['Nama Kreditur', 'Pokok Awal', 'Uang Muka', 'Cicilan per Bulan', 'Jangka Waktu (Bulan)', 'Terbayar', 'Sisa Pokok', 'Total Bunga', 'Tanggal Mulai', 'Status', 'Jatuh Tempo', 'Catatan']
   ];
   
   krediturList.forEach(kreditur => {
     const item = hutangData[kreditur];
     const riwayat = item.riwayat || [];
-    const sisaPokok = riwayat.length > 0 ? riwayat[riwayat.length - 1].sisaPokok : item.pokokAwal;
+    let sisaPokok = item.pokokAwal - (item.uangMuka || 0);
+    if (riwayat.length > 0) {
+        sisaPokok = riwayat[riwayat.length - 1].sisaPokok;
+    }
     const terbayar = item.pokokAwal - sisaPokok;
     
     let status = '';
@@ -2245,6 +2346,9 @@ function exportLaporanExcel() {
     laporanHutangData.push([
       kreditur,
       item.pokokAwal,
+      item.uangMuka || 0,
+      item.jumlahCicilan || 0,
+      item.jangkaWaktu || 0,
       terbayar,
       sisaPokok,
       item.totalBunga || 0,
@@ -2294,11 +2398,11 @@ function exportLaporanExcel() {
   
   // Add "Laporan Hutang" sheet
   const wsLaporan = XLSX.utils.aoa_to_sheet(laporanHutangData);
-  XLSX.utils.book_append_sheet(wb, wsLaporan, "Laporan Hutang");
+  XLSX.utils.book_append_sheet(wb, wsLaporan, "Laporan Hutang Ringkas"); // Renamed sheet
 
   // Add "Riwayat Pembayaran" sheet
   const wsRiwayat = XLSX.utils.aoa_to_sheet(riwayatPembayaranData);
-  XLSX.utils.book_append_sheet(wb, wsRiwayat, "Riwayat Pembayaran");
+  XLSX.utils.book_append_sheet(wb, wsRiwayat, "Riwayat Pembayaran Detail"); // Renamed sheet
   
   // Export to file
   XLSX.writeFile(wb, "laporan_hutang_dan_riwayat.xlsx");
