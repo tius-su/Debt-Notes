@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Pelacak Hutang Multi Kreditur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <meta name="theme-color" content="#007bff" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f8f8f8; }
+    .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 8px #ccc; }
+    input, select, button { padding: 8px; width: 100%; margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 6px; }
+    th { background: #007bff; color: #fff; }
+    .summary { background: #eaf4ff; padding: 10px; margin-top: 15px; border-left: 4px solid #007bff; }
+    .actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    #laporanSemua { margin-top: 30px; background: #fff; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+  </style>
+</head>
+<body>
+<div class="container" id="content">
+  <h2>Pelacak Hutang Multi Kreditur</h2><label>Nama Pemberi Kredit:</label> <input type="text" id="namaKreditur" placeholder="Contoh: A, B, C" />
+
+<label>Pokok Awal (Rp):</label> <input type="number" id="pokokAwal" /> <button onclick="simpanHutangBaru()">Simpan Hutang Baru</button>
+
+<label>Tanggal Pembayaran:</label> <input type="date" id="tanggal" />
+
+<label>Bayar Pokok (Rp):</label> <input type="number" id="bayarPokok" value="0" />
+
+<label>Bayar Bunga (Rp):</label> <input type="number" id="bayarBunga" value="0" />
+
+<button onclick="simpanPembayaran()">Simpan Pembayaran</button>
+
+  <div class="actions">
+    <button onclick="shareWhatsApp()">Share WhatsApp</button>
+    <button onclick="exportPDF()">Unduh PDF</button>
+    <select id="pilihKreditur" onchange="loadData()"></select>
+  </div>  <div class="summary" id="ringkasan"></div>  <table>
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Tanggal</th>
+        <th>Bayar Pokok</th>
+        <th>Bayar Bunga</th>
+        <th>Sisa Pokok</th>
+      </tr>
+    </thead>
+    <tbody id="riwayatTable"></tbody>
+  </table>  <div id="laporanSemua">
+    <h3>Laporan Semua Kreditur</h3>
+    <button onclick="shareLaporanSemua()">Share WhatsApp</button>
+    <button onclick="exportLaporanPDF()">Unduh PDF</button>
+    <table>
+      <thead>
+        <tr><th>Nama</th><th>Pokok Awal</th><th>Sisa Pokok</th><th>Total Bunga</th></tr>
+      </thead>
+      <tbody id="laporanTable"></tbody>
+    </table>
+  </div>
+</div><script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script><script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let pokokAwal = 0, sisaPokok = 0, totalBunga = 0, riwayat = [], krediturAktif = "";
+
+function formatRupiah(n) {
+  return 'Rp ' + Number(n).toLocaleString('id-ID');
+}
+
+function simpanHutangBaru() {
+  const nama = document.getElementById("namaKreditur").value.trim();
+  const pokok = parseInt(document.getElementById("pokokAwal").value) || 0;
+  if (!nama || !pokok) return alert("Isi nama kreditur dan pokok awal.");
+  krediturAktif = nama;
+  pokokAwal = pokok;
+  sisaPokok = pokok;
+  totalBunga = 0;
+  riwayat = [];
+  db.collection("hutang").doc(nama).set({ pokokAwal, totalBunga, riwayat })
+    .then(() => { loadKrediturList(); updateRingkasan(); updateTabel(); updateLaporanSemua(); alert("Hutang baru disimpan untuk kreditur: " + nama); })
+    .catch((error) => alert("Gagal menyimpan hutang baru: " + error.message));
+}
+
+function simpanPembayaran() {
+  const nama = document.getElementById("namaKreditur").value.trim();
+  const tanggal = document.getElementById("tanggal").value;
+  const bayarPokok = parseInt(document.getElementById("bayarPokok").value) || 0;
+  const bayarBunga = parseInt(document.getElementById("bayarBunga").value) || 0;
+  if (!nama || !tanggal) return alert("Isi nama kreditur dan tanggal.");
+  krediturAktif = nama;
+  if (riwayat.length === 0 && sisaPokok === 0) {
+    pokokAwal = parseInt(document.getElementById("pokokAwal").value) || 0;
+    if (!pokokAwal) return alert("Pokok awal wajib diisi.");
+    sisaPokok = pokokAwal;
+  }
+  sisaPokok -= bayarPokok;
+  if (sisaPokok < 0) sisaPokok = 0;
+  totalBunga += bayarBunga;
+  const data = { tanggal, bayarPokok, bayarBunga, sisaPokok, timestamp: new Date() };
+  riwayat.push(data);
+  db.collection("hutang").doc(nama).set({ pokokAwal, totalBunga, riwayat })
+    .then(() => { loadKrediturList(); updateRingkasan(); updateTabel(); updateLaporanSemua(); alert("Tersimpan untuk kreditur: " + nama); })
+    .catch(err => alert("Gagal menyimpan: " + err.message));
+}
+
+function updateRingkasan() {
+  const persen = sisaPokok > 0 ? ((500000 / sisaPokok) * 100).toFixed(2) : 0;
+  document.getElementById("ringkasan").innerHTML = `
+    Kreditur: <strong>${krediturAktif}</strong><br>
+    Pokok Awal: ${formatRupiah(pokokAwal)}<br>
+    Sisa Pokok: ${formatRupiah(sisaPokok)}<br>
+    Total Bunga Terbayar: ${formatRupiah(totalBunga)}<br>
+    Estimasi Bunga Bulanan: ${persen}%`;
+}
+
+function updateTabel() {
+  const tbody = document.getElementById("riwayatTable");
+  tbody.innerHTML = "";
+  riwayat.forEach((p, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i+1}</td><td>${p.tanggal}</td><td>${formatRupiah(p.bayarPokok)}</td><td>${formatRupiah(p.bayarBunga)}</td><td>${formatRupiah(p.sisaPokok)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateLaporanSemua() {
+  const tbody = document.getElementById("laporanTable");
+  tbody.innerHTML = "";
+  db.collection("hutang").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const riwayat = data.riwayat || [];
+      const sisa = riwayat.length ? riwayat[riwayat.length - 1].sisaPokok : data.pokokAwal;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${doc.id}</td><td>${formatRupiah(data.pokokAwal)}</td><td>${formatRupiah(sisa)}</td><td>${formatRupiah(data.totalBunga)}</td>`;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function loadData() {
+  const nama = document.getElementById("pilihKreditur").value;
+  if (!nama) return;
+  krediturAktif = nama;
+  db.collection("hutang").doc(nama).get().then(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      pokokAwal = data.pokokAwal || 0;
+      sisaPokok = data.riwayat?.slice(-1)[0]?.sisaPokok || pokokAwal;
+      totalBunga = data.totalBunga || 0;
+      riwayat = data.riwayat || [];
+      document.getElementById("namaKreditur").value = nama;
+      updateRingkasan();
+      updateTabel();
+    }
+  });
+}
+
+function loadKrediturList() {
+  const select = document.getElementById("pilihKreditur");
+  select.innerHTML = `<option value="">Pilih Kreditur</option>`;
+  db.collection("hutang").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const opt = document.createElement("option");
+      opt.value = doc.id;
+      opt.textContent = doc.id;
+      select.appendChild(opt);
+    });
+  });
+  updateLaporanSemua();
+}
+
+function shareWhatsApp() {
+  let msg = `Hutang ke ${krediturAktif}\nPokok Awal: ${formatRupiah(pokokAwal)}\nSisa: ${formatRupiah(sisaPokok)}\nTotal Bunga: ${formatRupiah(totalBunga)}\n\nRiwayat:\n`;
+  msg += riwayat.map(p => `${p.tanggal}: Pokok ${formatRupiah(p.bayarPokok)}, Bunga ${formatRupiah(p.bayarBunga)}`).join("\n");
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+function exportPDF() {
+  html2pdf().from(document.getElementById("content")).save(`hutang-${krediturAktif}.pdf`);
+}
+
+function shareLaporanSemua() {
+  db.collection("hutang").get().then(snapshot => {
+    let msg = `📊 Laporan Semua Kreditur\n\n`;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const sisa = data.riwayat?.length ? data.riwayat[data.riwayat.length - 1].sisaPokok : data.pokokAwal;
+      msg += `• ${doc.id}:\n   Pokok: ${formatRupiah(data.pokokAwal)}\n   Sisa: ${formatRupiah(sisa)}\n   Bunga: ${formatRupiah(data.totalBunga)}\n\n`;
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  });
+}
+
+function exportLaporanPDF() {
+  html2pdf().from(document.getElementById("laporanSemua")).save("laporan-semua-kreditur.pdf");
+}
+
+window.onload = loadKrediturList;
+</script></body>
+</html>
